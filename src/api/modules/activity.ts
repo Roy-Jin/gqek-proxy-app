@@ -248,3 +248,67 @@ export function signFlagChange(params: SignFlagChangeParams, opts?: RequestOptio
     opts
   );
 }
+
+/* ==================== Member management / countersign ==================== */
+
+/** Activity member list query params */
+export interface MemberListParams {
+  activityId: string;
+  signFlag: string;
+  userName: string;
+  [key: string]: unknown;
+}
+
+/** Activity member entry */
+export interface MemberInfo {
+  memberId: string;
+  studentId: string;
+  studentName: string | null;
+  userName: string | null;
+  grade: string | null;
+  collegeName: string | null;
+  majorName: string | null;
+  className: string | null;
+  studentIdentity: string | null;
+  status: string | null;
+  signNum: number;
+  signOutNum: number;
+  avatarUrl: string | null;
+  phone: string | null;
+  [key: string]: unknown;
+}
+
+/** Paged response of performanceListForApp (flat, uses rows) */
+export interface MemberListResult {
+  code: number;
+  msg: string;
+  total: number;
+  rows: MemberInfo[];
+  [key: string]: unknown;
+}
+
+/** Countersign (make-up sign) params */
+export interface CountersignParams {
+  activityId: string;
+  signMode: string;
+  signType: string;
+  studentIds: string[];
+  signFlag: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Get activity member list
+ * GET /activity/member/performanceListForApp
+ */
+export function listActivityMembers(params: MemberListParams, opts?: RequestOptions) {
+  return http.get<MemberListResult>("/activity/member/performanceListForApp", params, opts);
+}
+
+/**
+ * Make-up sign in / sign out for members
+ * POST /activitiy/sign/countersign
+ */
+export function countersign(params: CountersignParams, opts?: RequestOptions) {
+  return http.post<SignFlagChangeResult>("/activitiy/sign/countersign", params, opts);
+}

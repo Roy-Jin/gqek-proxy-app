@@ -79,6 +79,14 @@
             <span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform" :class="detail.signOutFlag === '1' ? 'translate-x-5' : ''"></span>
           </button>
         </div>
+        <button
+          type="button"
+          class="w-full flex items-center justify-between py-2.5 border-t border-gray-100 text-sm text-gray-700 transition-colors hover:text-primary-fg"
+          @click="showMembers = true"
+        >
+          <span>成员补签</span>
+          <AppIcon name="chevron-right" class="h-4 w-4 text-gray-400" />
+        </button>
       </AppCard>
 
       <!-- Basic info -->
@@ -162,6 +170,8 @@
         </p>
       </AppCard>
     </template>
+
+    <MemberCountersignModal :open="showMembers" :activity-id="id" @close="showMembers = false" />
   </div>
 </template>
 
@@ -175,6 +185,7 @@ import AppCard from "@/components/ui/AppCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppSpinner from "@/components/ui/AppSpinner.vue";
+import MemberCountersignModal from "@/components/activity/MemberCountersignModal.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -199,6 +210,7 @@ function onImgError() {
 }
 
 const signing = ref(false);
+const showMembers = ref(false);
 const started = computed(() => {
   const t = detail.value?.activityStartTime;
   if (!t) return false;

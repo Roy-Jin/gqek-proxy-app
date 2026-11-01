@@ -66,9 +66,10 @@
           v-for="row in rows"
           :key="row.businessId"
           class="px-4 sm:px-5 py-3.5 transition-colors flex gap-3"
-          :class="activeTab === 0 && selectedIds.includes(row.businessId) ? 'bg-primary-soft' : 'hover:bg-gray-50'"
+          :class="[activeTab === 0 && selectedIds.includes(row.businessId) ? 'bg-primary-soft' : 'hover:bg-gray-50', activeTab === 0 ? 'cursor-pointer' : '']"
+          @click="activeTab === 0 && toggleSelect(row.businessId)"
         >
-          <label v-if="activeTab === 0" class="shrink-0 mt-0.5 cursor-pointer select-none">
+          <label v-if="activeTab === 0" class="shrink-0 mt-0.5 cursor-pointer select-none" @click.stop>
             <input
               type="checkbox"
               class="sr-only"
@@ -84,10 +85,6 @@
               </svg>
             </span>
           </label>
-          <span
-            class="mt-1.5 h-2 w-2 rounded-full shrink-0"
-            :class="row.messageStatus === 0 ? 'bg-primary' : 'bg-gray-200'"
-          ></span>
           <div class="flex-1 min-w-0">
             <div class="flex items-baseline justify-between gap-2">
               <p class="text-sm font-medium text-gray-900 truncate">{{ row.fromUserName }}</p>
