@@ -1,12 +1,21 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import { routes } from "vue-router/auto-routes";
+import { createRouter, createWebHistory } from "vue-router";
+import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 
-import App from './App.vue'
-import router from './router'
+import App from "./App.vue";
+import "./styles/base.css";
+import { setupConsoleLogger } from "./utils/logger";
 
-const app = createApp(App)
+setupConsoleLogger();
 
-app.use(createPinia())
-app.use(router)
+const pinia = createPinia().use(piniaPluginPersistedstate);
 
-app.mount('#app')
+const app = createApp(App);
+app.use(pinia);
+app.use(createRouter({
+    history: createWebHistory(),
+    routes,
+}));
+app.mount("#app");
