@@ -14,7 +14,7 @@
     <header class="shrink-0 h-12 flex items-center justify-center px-4 bg-white border-b border-gray-100">
       <div class="flex items-center gap-2">
         <div class="h-6 w-6 rounded-md bg-primary text-white grid place-items-center text-xs font-bold">赣</div>
-        <span class="text-sm font-semibold text-gray-900">赣青二科管理平台</span>
+        <span class="text-sm font-semibold text-gray-900">赣青二课代理平台</span>
       </div>
     </header>
 

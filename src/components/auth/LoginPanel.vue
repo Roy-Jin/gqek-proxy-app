@@ -3,7 +3,7 @@
     <div class="w-full max-w-md">
       <div class="text-center mb-6">
         <div class="mx-auto h-14 w-14 rounded-2xl bg-primary text-white grid place-items-center text-2xl font-bold shadow-lg shadow-primary/25">赣</div>
-        <h1 class="mt-4 text-2xl font-bold text-gray-900">赣青二科管理平台</h1>
+        <h1 class="mt-4 text-2xl font-bold text-gray-900">赣青二课代理平台</h1>
         <p class="mt-1.5 text-sm text-gray-500">请登录后继续访问</p>
       </div>
 
