@@ -44,12 +44,17 @@
     <!-- App info -->
     <AppCard :padding="false" class="mb-4">
       <div class="divide-y divide-gray-100">
-        <div
-          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-400 cursor-default"
+        <button
+          type="button"
+          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+          @click="openUpdate"
         >
-          <span>检查更新</span>
-          <span class="text-xs text-gray-400">暂不支持</span>
-        </div>
+          <span class="flex items-center gap-2">
+            检查更新
+            <span v-if="hasUpdate" class="h-2 w-2 rounded-full bg-red-500"></span>
+          </span>
+          <AppIcon name="chevron-right" class="h-4 w-4 text-gray-400" />
+        </button>
         <button
           type="button"
           class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
@@ -83,6 +88,53 @@
       </AppButton>
     </AppModal>
 
+    <!-- Update check dialog -->
+    <AppModal :open="showUpdate" title="检查更新" @close="showUpdate = false">
+      <!-- Checking -->
+      <div v-if="updateState === 'checking'" class="mt-2 flex items-center justify-center gap-2 py-4">
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-primary"></span>
+        <p class="text-sm text-gray-500">正在检查更新...</p>
+      </div>
+
+      <!-- Error -->
+      <template v-else-if="updateState === 'error'">
+        <p class="mt-2 text-sm text-gray-500 leading-relaxed break-all">{{ updateError }}</p>
+        <AppButton variant="primary" block class="mt-4" @click="checkForUpdate">
+          重试
+        </AppButton>
+      </template>
+
+      <!-- Up to date -->
+      <template v-else-if="updateState === 'up-to-date'">
+        <p class="mt-2 text-sm text-gray-500 leading-relaxed">
+          当前已是最新版本 v{{ currentVersion }}
+        </p>
+        <AppButton variant="secondary" block class="mt-4" @click="checkForUpdate">
+          重新检查
+        </AppButton>
+      </template>
+
+      <!-- New version available -->
+      <template v-else-if="release">
+        <p class="mt-2 text-sm text-gray-500 leading-relaxed">
+          发现新版本 v{{ release.version }}（当前 v{{ currentVersion }}）
+          <template v-if="release.apkSize">，约 {{ formatSize(release.apkSize) }}</template>
+        </p>
+        <div
+          v-if="release.notes"
+          class="mt-2 max-h-32 overflow-auto rounded-lg bg-gray-50 p-3 text-xs text-gray-600 whitespace-pre-wrap"
+        >{{ release.notes }}</div>
+        <AppButton
+          variant="primary"
+          block
+          class="mt-4"
+          @click="downloadAndInstall"
+        >
+          立即下载安装
+        </AppButton>
+      </template>
+    </AppModal>
+
     <!-- Logout confirmation dialog -->
     <AppModal :open="showLogoutConfirm" title="退出登录" @close="showLogoutConfirm = false">
       <p class="mt-2 text-sm text-gray-500 text-center">确定要退出当前账号吗？</p>
@@ -105,6 +157,7 @@ import { listTeam, logout as logoutApi } from "@/api";
 import type { TeamInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";
+import { useAppUpdate } from "@/composables/useAppUpdate";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
@@ -117,11 +170,26 @@ const toast = useToast();
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);
 const showDevStatement = ref(false);
+const showUpdate = ref(false);
 const showLogoutConfirm = ref(false);
 const loggingOut = ref(false);
 
+const {
+  state: updateState,
+  currentVersion,
+  release,
+  error: updateError,
+  hasUpdate,
+  checkForUpdate,
+  downloadAndInstall,
+} = useAppUpdate();
+
 const schoolName = auth.user?.schoolName || "";
 const teamInitial = computed(() => (team.value?.teamName ?? "").charAt(0).toUpperCase() || "团");
+
+function formatSize(bytes: number) {
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 async function fetchTeam() {
   teamLoading.value = true;
@@ -138,6 +206,11 @@ async function fetchTeam() {
 
 function goDebug() {
   router.push("/about/debug");
+}
+
+function openUpdate() {
+  showUpdate.value = true;
+  void checkForUpdate();
 }
 
 async function logout() {
@@ -158,5 +231,9 @@ async function logout() {
   }
 }
 
-onMounted(fetchTeam);
+onMounted(() => {
+  void fetchTeam();
+  // Silent check: only drives the red dot on the "检查更新" entry
+  void checkForUpdate();
+});
 </script>
