@@ -48,12 +48,53 @@ interface GithubRelease {
   assets: GithubAsset[];
 }
 
+/** Optional read-only token; Vite inlines it at build time (empty means anonymous). */
+const GITHUB_TOKEN = (import.meta.env.VITE_GITHUB_TOKEN || "").trim();
+const GITHUB_API_VERSION = "2022-11-28";
+
+function githubHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": GITHUB_API_VERSION,
+  };
+  if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+  return headers;
+}
+
+/** Human-readable failure text; built from status/headers only, never from sent headers. */
+function githubErrorText(res: Response): string {
+  if (res.status === 401) {
+    return "GitHub 访问令牌无效或已过期，请检查 VITE_GITHUB_TOKEN";
+  }
+  if (res.status === 404) {
+    return "未找到发布信息（仓库或 Release 不存在，或仓库未公开）";
+  }
+  if (res.status === 403 || res.status === 429) {
+    const remaining = res.headers.get("x-ratelimit-remaining");
+    if (res.status === 429 || remaining === "0") {
+      const resetSeconds = Number(res.headers.get("x-ratelimit-reset"));
+      const resetAt =
+        Number.isFinite(resetSeconds) && resetSeconds > 0
+          ? new Date(resetSeconds * 1000).toLocaleTimeString("zh-CN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })
+          : "";
+      const hint = GITHUB_TOKEN ? "请稍后重试" : "请稍后重试，或配置只读 token 提高限额";
+      return `GitHub API 请求已达限额${resetAt ? `（预计 ${resetAt} 恢复）` : ""}，${hint}`;
+    }
+    return "GitHub 拒绝访问（HTTP 403），请确认令牌权限";
+  }
+  return `版本检查请求失败（HTTP ${res.status}）`;
+}
+
 async function fetchLatestRelease(releaseApiUrl: string, apkAssetName: string): Promise<ReleaseInfo> {
   const res = await fetch(releaseApiUrl, {
-    headers: { Accept: "application/vnd.github+json" },
+    headers: githubHeaders(),
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`版本检查请求失败（HTTP ${res.status}）`);
+  if (!res.ok) throw new Error(githubErrorText(res));
   const data = (await res.json()) as GithubRelease;
   const version = (data.tag_name || "").replace(/^v/i, "");
   if (!version) throw new Error("Release 中未找到版本号");
