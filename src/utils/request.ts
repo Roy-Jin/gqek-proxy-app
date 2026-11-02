@@ -11,6 +11,7 @@ import {
   rsaEncrypt,
   axiosDecrypt,
 } from "./crypto.js";
+import { errorMessage } from "./error.js";
 
 /* ==================== 类型 ==================== */
 
@@ -31,6 +32,11 @@ export interface RequestOptions {
   isEncrypt?: boolean;
   timeout?: number;
   timestampDifference?: number;
+  /**
+   * Called once per response when a token-authenticated request is rejected with 401
+   * (HTTP status or business code). Anonymous requests (isToken:false) never trigger it.
+   */
+  onUnauthorized?: (token: string) => void;
 }
 
 export interface RequestResult<T = unknown> {
@@ -47,6 +53,7 @@ export interface CreateClientDefaults {
   getToken?: () => string | null | undefined;
   headers?: HeadersRecord;
   timeout?: number;
+  onUnauthorized?: (token: string) => void;
 }
 
 /* ==================== 工具函数 ==================== */
@@ -117,6 +124,7 @@ export async function request<T = unknown>(
     isEncrypt,
     timeout = 30000,
     timestampDifference = 0,
+    onUnauthorized,
   } = options;
 
   const httpMethod = String(method).toLowerCase();
@@ -231,8 +239,7 @@ export async function request<T = unknown>(
     if (e instanceof Error && e.name === "AbortError") {
       throw new Error("系统接口请求超时");
     }
-    const msg = e instanceof Error ? e.message : String(e);
-    throw new Error("后端接口连接异常: " + msg);
+    throw new Error("后端接口连接异常: " + errorMessage(e));
   }
   clearTimeout(timer);
 
@@ -263,7 +270,20 @@ export async function request<T = unknown>(
   // 固定 key/iv 的 AES-CBC 二次处理
   body = axiosDecrypt(body);
 
-  /* ---------- 6. 返回 ---------- */
+  /* ---------- 6. 会话失效回调 ---------- */
+
+  // Only authenticated requests can expire a session; anonymous calls keep their own errors.
+  if (tokenFlag && realToken && onUnauthorized) {
+    const businessCode =
+      body && typeof body === "object"
+        ? (body as { code?: unknown }).code
+        : undefined;
+    if (resp.status === 401 || String(businessCode) === "401") {
+      onUnauthorized(realToken);
+    }
+  }
+
+  /* ---------- 7. 返回 ---------- */
 
   const respHeaders: Record<string, string> = {};
   resp.headers.forEach((value, key) => {

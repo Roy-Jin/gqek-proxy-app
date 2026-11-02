@@ -50,10 +50,6 @@ defineProps<{ name: string }>();
       <path d="M4 6h.01M4 12h.01M4 18h.01" />
       <path d="M8 6h12M8 12h12M8 18h12" />
     </template>
-    <template v-else-if="name === 'user'">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </template>
     <template v-else-if="name === 'info'">
       <circle cx="12" cy="12" r="9" />
       <path d="M12 16v-4" />
@@ -61,11 +57,6 @@ defineProps<{ name: string }>();
     </template>
     <template v-else-if="name === 'chevron-right'">
       <path d="m9 6 6 6-6 6" />
-    </template>
-    <template v-else-if="name === 'logout'">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <path d="m16 17 5-5-5-5" />
-      <path d="M21 12H9" />
     </template>
     <template v-else-if="name === 'x'">
       <path d="M18 6 6 18M6 6l12 12" />

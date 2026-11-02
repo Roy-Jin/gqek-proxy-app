@@ -10,16 +10,30 @@
       <p>登录状态：{{ auth.token ? "已登录" : "未登录" }}</p>
       <p>已保存账号：{{ accounts.accounts.length }} 个</p>
     </div>
-    <AppButton variant="secondary" size="sm" class="mt-3" @click="exportKey">
-      复制当前密钥
-    </AppButton>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <AppButton variant="secondary" size="sm" @click="exportKey">
+        复制当前密钥
+      </AppButton>
+      <AppButton variant="secondary" size="sm" @click="shareTempKey">
+        生成临时密钥（10 分钟）
+      </AppButton>
+    </div>
+    <p
+      v-if="tempKey"
+      class="mt-2 rounded-lg bg-gray-50 p-2 text-xs text-gray-600 break-all select-all"
+    >{{ tempKey }}</p>
+    <p v-if="tempKey" class="mt-1 text-xs text-gray-400">
+      有效期至 {{ tempKeyExpiry }}，仅在当前页面内存中保留
+    </p>
   </AppCard>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import { useAccountsStore } from "@/stores/accounts";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";
+import { createTempKey } from "@/utils/tempKey";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 
@@ -27,9 +41,30 @@ const auth = useGlobal();
 const accounts = useAccountsStore();
 const toast = useToast();
 
+/** Temp key shown on screen only; never persisted, never logged. */
+const tempKey = ref("");
+const tempKeyExpiry = ref("");
+
 function text(value: string | undefined): string {
   const trimmed = value?.trim();
   return trimmed || "未提供";
+}
+
+function formatExpiry(ms: number): string {
+  return new Date(ms).toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+async function copyText(value: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    return fallbackCopy(value);
+  }
 }
 
 async function exportKey() {
@@ -38,17 +73,31 @@ async function exportKey() {
     toast.error("暂无密钥可导出");
     return;
   }
-  try {
-    await navigator.clipboard.writeText(key);
+  if (await copyText(key)) {
     toast.success("密钥已复制到剪贴板");
-  } catch {
-    fallbackCopy(key);
+  } else {
+    toast.error("复制失败，请手动复制");
   }
 }
 
-function fallbackCopy(text: string) {
+async function shareTempKey() {
+  if (!auth.token) {
+    toast.error("暂无密钥可分享");
+    return;
+  }
+  const { key, expiresAt } = createTempKey(auth.token);
+  tempKey.value = key;
+  tempKeyExpiry.value = formatExpiry(expiresAt);
+  if (await copyText(key)) {
+    toast.success(`临时密钥已复制，有效期至 ${tempKeyExpiry.value}`);
+  } else {
+    toast.error("复制失败，请手动复制下方密钥");
+  }
+}
+
+function fallbackCopy(value: string): boolean {
   const ta = document.createElement("textarea");
-  ta.value = text;
+  ta.value = value;
   ta.style.position = "fixed";
   ta.style.opacity = "0";
   document.body.appendChild(ta);
@@ -60,10 +109,6 @@ function fallbackCopy(text: string) {
     ok = false;
   }
   document.body.removeChild(ta);
-  if (ok) {
-    toast.success("密钥已复制到剪贴板");
-  } else {
-    toast.error("复制失败，请手动复制");
-  }
+  return ok;
 }
 </script>

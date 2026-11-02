@@ -1,4 +1,5 @@
 import { http } from "../client.js";
+import type { PagedResult } from "../types.js";
 import type { RequestOptions } from "../../utils/request.js";
 
 /** Team list query params */
@@ -33,13 +34,7 @@ export interface TeamInfo {
 }
 
 /** Paged response of /system/team/list (flat, uses rows) */
-export interface TeamListResult {
-  code: number;
-  msg: string;
-  total: number;
-  rows: TeamInfo[];
-  [key: string]: unknown;
-}
+export type TeamListResult = PagedResult<TeamInfo>;
 
 /**
  * Get team list

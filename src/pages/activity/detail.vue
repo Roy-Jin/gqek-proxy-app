@@ -14,15 +14,7 @@
 
     <AppSpinner v-if="loading && !detail" />
 
-    <AppCard v-else-if="errorMsg" class="text-center">
-      <div class="flex flex-col items-center gap-3 text-gray-500">
-        <p class="text-sm">{{ errorMsg }}</p>
-        <AppButton variant="secondary" size="sm" @click="fetchDetail">
-          <AppIcon name="refresh" class="h-4 w-4" />
-          重试
-        </AppButton>
-      </div>
-    </AppCard>
+    <AppErrorState v-else-if="errorMsg" :message="errorMsg" @retry="fetchDetail" />
 
     <template v-else-if="detail">
       <!-- Cover -->
@@ -181,10 +173,12 @@ import { useRoute, useRouter } from "vue-router";
 import { getActivityDetail, getVolunteerActivityDetail, signFlagChange, activityStatusLabel } from "@/api";
 import type { ActivityDetail } from "@/api";
 import { useToast } from "@/composables/useToast";
+import { errorMessage } from "@/utils/error";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppSpinner from "@/components/ui/AppSpinner.vue";
+import AppErrorState from "@/components/ui/AppErrorState.vue";
 import MemberCountersignModal from "@/components/activity/MemberCountersignModal.vue";
 
 const route = useRoute();
@@ -230,7 +224,7 @@ async function changeSign(signFlag: string, signOutFlag: string) {
     detail.value.signOutFlag = signOutFlag;
     toast.success("操作成功");
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : String(e));
+    toast.error(errorMessage(e));
   } finally {
     signing.value = false;
   }
@@ -285,7 +279,7 @@ async function fetchDetail() {
     if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
     detail.value = body.data;
   } catch (e) {
-    errorMsg.value = e instanceof Error ? e.message : String(e);
+    errorMsg.value = errorMessage(e);
   } finally {
     loading.value = false;
   }

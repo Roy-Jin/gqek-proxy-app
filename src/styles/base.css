@@ -70,3 +70,14 @@ img {
     background-color: var(--color-primary);
     color: #fff;
 }
+
+/* Shared fade for modal dialogs */
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}

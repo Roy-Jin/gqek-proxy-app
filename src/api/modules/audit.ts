@@ -1,4 +1,5 @@
 import { http } from "../client.js";
+import type { ApiResult } from "../types.js";
 import type { RequestOptions } from "../../utils/request.js";
 
 /** Audit request params */
@@ -10,12 +11,7 @@ export interface AuditParams {
 }
 
 /** Audit response */
-export interface AuditResult {
-  code: number;
-  msg: string;
-  data: unknown;
-  [key: string]: unknown;
-}
+export type AuditResult = ApiResult;
 
 /**
  * Approve / reject audit items

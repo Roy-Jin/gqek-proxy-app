@@ -21,7 +21,6 @@ export const useAccountsStore = defineStore("accounts", {
     accounts: [] as SavedAccount[],
   }),
   getters: {
-    sorted: (state) => [...state.accounts].sort((a, b) => b.lastUsedAt - a.lastUsedAt),
     summaries: (state): AccountSummary[] =>
       [...state.accounts]
         .sort((a, b) => b.lastUsedAt - a.lastUsedAt)

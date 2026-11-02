@@ -1,4 +1,5 @@
 import { http } from "../client.js";
+import type { ApiResult, PagedResult } from "../types.js";
 import type { RequestOptions } from "../../utils/request.js";
 
 /* ==================== Activity status ==================== */
@@ -56,13 +57,7 @@ export interface ActivityInfo {
 }
 
 /** Paged response of myActivitiyInfoByStudent (flat, uses rows) */
-export interface MyActivityResult {
-  code: number;
-  msg: string;
-  total: number;
-  rows: ActivityInfo[];
-  [key: string]: unknown;
-}
+export type MyActivityResult = PagedResult<ActivityInfo>;
 
 /**
  * Get my activity list by student
@@ -114,13 +109,7 @@ export interface VolunteerActivityInfo {
 }
 
 /** Paged response of volunteer/myActivitiyInfoByStudent (flat, uses rows) */
-export interface VolunteerActivityResult {
-  code: number;
-  msg: string;
-  total: number;
-  rows: VolunteerActivityInfo[];
-  [key: string]: unknown;
-}
+export type VolunteerActivityResult = PagedResult<VolunteerActivityInfo>;
 
 /**
  * Get my volunteer activity list by student
@@ -197,12 +186,7 @@ export interface ActivityDetail {
 }
 
 /** Activity detail response (wrapped in data) */
-export interface ActivityDetailResult {
-  code: number;
-  msg: string;
-  data: ActivityDetail;
-  [key: string]: unknown;
-}
+export type ActivityDetailResult = ApiResult<ActivityDetail>;
 
 /**
  * Get culture/sports activity detail
@@ -239,12 +223,7 @@ export interface SignFlagChangeParams {
 }
 
 /** Sign in / out toggle response */
-export interface SignFlagChangeResult {
-  code: number;
-  msg: string;
-  data: unknown;
-  [key: string]: unknown;
-}
+export type SignFlagChangeResult = ApiResult;
 
 /**
  * Toggle activity sign-in / sign-out flags
@@ -288,13 +267,7 @@ export interface MemberInfo {
 }
 
 /** Paged response of performanceListForApp (flat, uses rows) */
-export interface MemberListResult {
-  code: number;
-  msg: string;
-  total: number;
-  rows: MemberInfo[];
-  [key: string]: unknown;
-}
+export type MemberListResult = PagedResult<MemberInfo>;
 
 /** Countersign (make-up sign) params */
 export interface CountersignParams {

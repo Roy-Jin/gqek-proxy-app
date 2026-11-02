@@ -30,6 +30,7 @@ import { ref } from "vue";
 import { getCaptchaImage, getInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
 import type { RequestResult } from "@/utils/request";
+import { errorMessage } from "@/utils/error";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 
@@ -92,7 +93,7 @@ async function runAll() {
     } catch (e) {
       const ms = Math.round(performance.now() - started);
       row.status = "fail";
-      row.detail = `${e instanceof Error ? e.message : String(e)} · ${ms}ms`;
+      row.detail = `${errorMessage(e)} · ${ms}ms`;
     }
   }
   running.value = false;

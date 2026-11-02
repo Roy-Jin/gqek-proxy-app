@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { useEnvStore } from "@/stores/env";
+import { errorMessage } from "@/utils/error";
 import {
   getNativeVersion,
   isNativeApp,
@@ -108,7 +109,7 @@ export function useAppUpdate() {
       state.value =
         compareVersions(latest.version, currentVersion.value) > 0 ? "available" : "up-to-date";
     } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e);
+      error.value = errorMessage(e);
       state.value = "error";
     }
   }

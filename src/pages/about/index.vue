@@ -212,6 +212,7 @@ import { useRouter } from "vue-router";
 import { listTeam, logout as logoutApi } from "@/api";
 import type { TeamInfo } from "@/api";
 import { useAccountSession } from "@/composables/useAccountSession";
+import { useAccountSwitch } from "@/composables/useAccountSwitch";
 import { useDebugUnlock } from "@/composables/useDebugUnlock";
 import { useAccountsStore } from "@/stores/accounts";
 import { useGlobal } from "@/stores/global";
@@ -229,6 +230,7 @@ const router = useRouter();
 const toast = useToast();
 const accounts = useAccountsStore();
 const session = useAccountSession();
+const { switchingId, errorMsg: switchError, savedAccounts, switchTo, resetError } = useAccountSwitch();
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);
@@ -237,8 +239,6 @@ const showUpdate = ref(false);
 const showLogoutConfirm = ref(false);
 const loggingOut = ref(false);
 const showAccounts = ref(false);
-const switchingId = ref("");
-const switchError = ref("");
 
 const {
   state: updateState,
@@ -250,7 +250,6 @@ const {
   downloadAndInstall,
 } = useAppUpdate();
 
-const savedAccounts = computed(() => accounts.summaries);
 const currentUserId = computed(() => auth.user?.userId || "");
 const userNameLabel = computed(() => auth.user?.userName?.trim() || "未提供");
 const schoolLabel = computed(() => auth.user?.schoolName?.trim() || "未提供");
@@ -279,33 +278,19 @@ watch(showDevStatement, (open) => {
 });
 
 function openAccounts() {
-  switchError.value = "";
+  resetError();
   showAccounts.value = true;
 }
 
 function closeAccounts() {
   if (switchingId.value) return;
   showAccounts.value = false;
-  switchError.value = "";
+  resetError();
 }
 
 function onAccountClick(userId: string) {
   if (userId === currentUserId.value) return;
   void switchTo(userId);
-}
-
-async function switchTo(userId: string) {
-  if (switchingId.value) return;
-  const account = accounts.accounts.find((item) => item.userId === userId);
-  if (!account) return;
-  switchingId.value = userId;
-  switchError.value = "";
-  try {
-    await session.switchAccount(account);
-  } catch (e) {
-    switchError.value = "账号切换失败：" + (e instanceof Error ? e.message : String(e));
-    switchingId.value = "";
-  }
 }
 
 function removeAccount(userId: string) {

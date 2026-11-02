@@ -11,35 +11,13 @@
       </AppButton>
     </div>
 
-    <div class="flex p-1 rounded-lg bg-gray-100 w-fit mb-4">
-      <button
-        v-for="tab in tabs"
-        :key="tab.status"
-        type="button"
-        class="px-4 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap"
-        :class="
-          activeTab === tab.status
-            ? 'bg-white text-gray-900 shadow-sm font-medium'
-            : 'text-gray-500 hover:text-gray-700'
-        "
-        @click="switchTab(tab.status)"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
+    <AppSegmentedTabs :items="tabs" :active="activeTab" @change="switchTab" />
 
     <!-- Approval action bar -->
     <div v-if="activeTab === 0 && selectedIds.length > 0" class="sticky bottom-2 z-10 mt-4">
       <div class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-100 shadow-lg">
         <button type="button" class="flex items-center gap-1.5 text-sm text-gray-600 select-none" @click="toggleSelectAll">
-          <span
-            class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all duration-150"
-            :class="allSelected ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white text-transparent'"
-          >
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          </span>
+          <AppCheckCircle :checked="allSelected" />
           全选
         </button>
         <span class="text-sm text-gray-500">已选 <span class="font-semibold text-primary-fg">{{ selectedIds.length }}</span> 项</span>
@@ -53,11 +31,7 @@
     <AppCard :padding="false">
       <!-- Loading skeleton -->
       <div v-if="loading && rows.length === 0" class="divide-y divide-gray-100">
-        <div v-for="i in 5" :key="i" class="p-4 sm:p-5 animate-pulse space-y-2">
-          <div class="h-3.5 bg-gray-200 rounded w-1/4"></div>
-          <div class="h-3 bg-gray-100 rounded w-3/4"></div>
-          <div class="h-3 bg-gray-100 rounded w-1/2"></div>
-        </div>
+        <AppSkeletonRows />
       </div>
 
       <!-- Message list -->
@@ -76,14 +50,7 @@
               :checked="selectedIds.includes(row.businessId)"
               @change="toggleSelect(row.businessId)"
             />
-            <span
-              class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all duration-150"
-              :class="selectedIds.includes(row.businessId) ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white text-transparent'"
-            >
-              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 13l4 4L19 7" />
-              </svg>
-            </span>
+            <AppCheckCircle :checked="selectedIds.includes(row.businessId)" />
           </label>
           <div class="flex-1 min-w-0">
             <div class="flex items-baseline justify-between gap-2">
@@ -125,12 +92,17 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { listTodoApp, auditInfo } from "@/api";
 import type { TodoMessage } from "@/api";
 import { useToast } from "@/composables/useToast";
+import { useMultiSelect } from "@/composables/useMultiSelect";
+import { errorMessage } from "@/utils/error";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
 import AppModal from "@/components/ui/AppModal.vue";
 import AppPagination from "@/components/ui/AppPagination.vue";
+import AppSegmentedTabs from "@/components/ui/AppSegmentedTabs.vue";
+import AppCheckCircle from "@/components/ui/AppCheckCircle.vue";
+import AppSkeletonRows from "@/components/ui/AppSkeletonRows.vue";
 
 const pageSize = 10;
 const pageNum = ref(1);
@@ -138,25 +110,23 @@ const total = ref(0);
 const rows = ref<TodoMessage[]>([]);
 const loading = ref(false);
 const errorMsg = ref("");
-const selectedIds = ref<string[]>([]);
 const approving = ref(false);
 const showRejectConfirm = ref(false);
+
+const { selectedIds, allSelected, toggle: toggleSelect, toggleAll: toggleSelectAll, clear: clearSelection } =
+  useMultiSelect(rows, (row) => row.businessId);
 
 const toast = useToast();
 
 // Filter values match the record field enum: 0 = todo, 2 = done
-const tabs = [
-  { label: "待办", status: 0 },
-  { label: "已办", status: 2 },
-] as const;
+const tabs: { label: string; value: number }[] = [
+  { label: "待办", value: 0 },
+  { label: "已办", value: 2 },
+];
 
 const activeTab = ref<number>(0);
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)));
-
-const allSelected = computed(() =>
-  rows.value.length > 0 && rows.value.every((r) => selectedIds.value.includes(r.businessId))
-);
 
 /** Min gap between refresh taps; only absorbs repeat clicks. */
 const REFRESH_GAP_MS = 400;
@@ -170,7 +140,7 @@ async function fetchList() {
   lastRequestAt = Date.now();
   loading.value = true;
   errorMsg.value = "";
-  selectedIds.value = [];
+  clearSelection();
   try {
     const body = (
       await listTodoApp({
@@ -186,7 +156,7 @@ async function fetchList() {
     total.value = body.total;
   } catch (e) {
     if (seq !== requestSeq) return;
-    errorMsg.value = e instanceof Error ? e.message : String(e);
+    errorMsg.value = errorMessage(e);
   } finally {
     if (seq === requestSeq) loading.value = false;
   }
@@ -222,24 +192,6 @@ function refresh() {
   }, wait);
 }
 
-function toggleSelect(id: string) {
-  const i = selectedIds.value.indexOf(id);
-  if (i >= 0) selectedIds.value.splice(i, 1);
-  else selectedIds.value.push(id);
-}
-
-function toggleSelectAll() {
-  if (allSelected.value) {
-    selectedIds.value = [];
-  } else {
-    selectedIds.value = rows.value.map((r) => r.businessId);
-  }
-}
-
-function clearSelection() {
-  selectedIds.value = [];
-}
-
 function confirmReject() {
   showRejectConfirm.value = false;
   runAudit(2);
@@ -256,7 +208,7 @@ async function runAudit(auditStatus: number) {
     toast.success("操作成功");
     fetchList();
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : String(e));
+    toast.error(errorMessage(e));
   } finally {
     approving.value = false;
   }

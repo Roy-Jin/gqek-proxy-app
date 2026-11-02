@@ -12,18 +12,7 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex p-1 rounded-xl bg-gray-100 w-fit mb-4">
-      <button
-        v-for="tab in tabs"
-        :key="tab.value"
-        type="button"
-        class="px-4 py-1.5 text-sm rounded-lg transition-colors whitespace-nowrap"
-        :class="activeTab === tab.value ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'"
-        @click="switchTab(tab.value)"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
+    <AppSegmentedTabs :items="tabs" :active="activeTab" @change="switchTab" />
 
     <!-- Loading skeleton (first load) -->
     <div v-if="loading && rows.length === 0" class="space-y-3">
@@ -42,15 +31,7 @@
     </div>
 
     <!-- Error state (first load) -->
-    <AppCard v-else-if="errorMsg && rows.length === 0" class="text-center">
-      <div class="flex flex-col items-center gap-3 text-gray-500">
-        <p class="text-sm">{{ errorMsg }}</p>
-        <AppButton variant="secondary" size="sm" @click="refresh">
-          <AppIcon name="refresh" class="h-4 w-4" />
-          重试
-        </AppButton>
-      </div>
-    </AppCard>
+    <AppErrorState v-else-if="errorMsg && rows.length === 0" :message="errorMsg" @retry="refresh" />
 
     <!-- Empty state -->
     <AppCard v-else-if="rows.length === 0">
@@ -138,14 +119,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel } from "@/api";
 import type { ActivityInfo, VolunteerActivityInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
+import { errorMessage } from "@/utils/error";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
+import AppSegmentedTabs from "@/components/ui/AppSegmentedTabs.vue";
+import AppErrorState from "@/components/ui/AppErrorState.vue";
 
 type ActivityTab = "volunteer" | "sports";
 
@@ -170,13 +154,19 @@ const MIN_BATCH_ITEMS = 3;
 
 const auth = useGlobal();
 const router = useRouter();
+const route = useRoute();
 
 const tabs = [
   { label: "志愿", value: "volunteer" },
   { label: "文体", value: "sports" },
 ] as const;
 
-const activeTab = ref<ActivityTab>("volunteer");
+/** Tab comes from the URL so a refresh or deep link never trusts stale state. */
+function parseTab(value: unknown): ActivityTab {
+  return value === "sports" ? "sports" : "volunteer";
+}
+
+const activeTab = ref<ActivityTab>(parseTab(route.query.tab));
 const rows = ref<ActivityItem[]>([]);
 const loading = ref(false);
 const loadingMore = ref(false);
@@ -188,24 +178,14 @@ let orgMaintainerIds = new Set<string>();
 let seenIds = new Set<string>();
 let requestSeq = 0;
 
-function mapVolunteer(r: VolunteerActivityInfo): ActivityItem {
-  return {
-    activityId: r.activityId,
-    activityName: r.activityName,
-    activityAvatarUrl: r.activityAvatarUrl,
-    maintainerName: r.maintainerName,
-    teacherName: r.teacherName,
-    activityClassifyName: r.activityClassifyName,
-    activityLocation: r.activityLocation,
-    duration: r.serviceTime ?? r.attendTime ?? "",
-    memberNum: r.memberNum,
-    status: r.status,
-    activityStartTime: r.activityStartTime,
-    activityEndTime: r.activityEndTime,
-  };
+function durationOf(tab: ActivityTab, r: ActivityInfo | VolunteerActivityInfo): string {
+  if (tab === "volunteer") {
+    return (r as VolunteerActivityInfo).serviceTime ?? r.attendTime ?? "";
+  }
+  return r.attendTime ?? "";
 }
 
-function mapSports(r: ActivityInfo): ActivityItem {
+function toItem(tab: ActivityTab, r: ActivityInfo | VolunteerActivityInfo): ActivityItem {
   return {
     activityId: r.activityId,
     activityName: r.activityName,
@@ -214,7 +194,7 @@ function mapSports(r: ActivityInfo): ActivityItem {
     teacherName: r.teacherName,
     activityClassifyName: r.activityClassifyName,
     activityLocation: r.activityLocation,
-    duration: r.attendTime,
+    duration: durationOf(tab, r),
     memberNum: r.memberNum,
     status: r.status,
     activityStartTime: r.activityStartTime,
@@ -248,11 +228,7 @@ function selectOrgRows(
     if (batchIds.has(id) || seenIds.has(id)) continue;
     batchIds.add(id);
     if (!r.maintainerId || !orgMaintainerIds.has(String(r.maintainerId))) continue;
-    items.push(
-      tab === "volunteer"
-        ? mapVolunteer(r as VolunteerActivityInfo)
-        : mapSports(r as ActivityInfo)
-    );
+    items.push(toItem(tab, r));
   }
   return items;
 }
@@ -324,7 +300,7 @@ async function initTab() {
     await fetchBatch(tab, seq);
   } catch (e) {
     if (seq !== requestSeq) return;
-    errorMsg.value = e instanceof Error ? e.message : String(e);
+    errorMsg.value = errorMessage(e);
   } finally {
     if (seq === requestSeq) loading.value = false;
   }
@@ -339,7 +315,7 @@ async function loadMore() {
     await fetchBatch(tab, seq);
   } catch (e) {
     if (seq !== requestSeq) return;
-    errorMsg.value = e instanceof Error ? e.message : String(e);
+    errorMsg.value = errorMessage(e);
   } finally {
     if (seq === requestSeq) loadingMore.value = false;
   }
@@ -348,6 +324,8 @@ async function loadMore() {
 function switchTab(v: ActivityTab) {
   if (activeTab.value === v) return;
   activeTab.value = v;
+  // Keep the URL in sync so returning from a detail page restores this tab.
+  router.replace({ path: route.path, query: { ...route.query, tab: v } });
   initTab();
 }
 

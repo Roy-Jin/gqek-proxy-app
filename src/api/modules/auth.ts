@@ -1,19 +1,15 @@
 import { http } from "../client.js";
+import type { ApiResult } from "../types.js";
 import type { RequestOptions } from "../../utils/request.js";
 
 /* ==================== Types ==================== */
 
 /** Captcha response payload */
-export interface CaptchaResult {
-  code: number;
-  msg: string;
-  data: {
-    /** Base64 image, needs "data:image/gif;base64," prefix */
-    img: string;
-    uuid: string;
-  };
-  [key: string]: unknown;
-}
+export type CaptchaResult = ApiResult<{
+  /** Base64 image, needs "data:image/gif;base64," prefix */
+  img: string;
+  uuid: string;
+}>;
 
 /** SMS captcha request params */
 export interface CaptchaSmsParams {
@@ -50,14 +46,7 @@ export interface SmsLoginParams {
 }
 
 /** Login response payload */
-export interface LoginResult {
-  code: number;
-  msg: string;
-  data: {
-    token: string;
-  };
-  [key: string]: unknown;
-}
+export type LoginResult = ApiResult<{ token: string }>;
 
 /** Current user profile from getInfo */
 export interface UserInfo {
@@ -73,24 +62,13 @@ export interface UserInfo {
 }
 
 /** getInfo response payload */
-export interface InfoResult {
-  code: number;
-  msg: string;
-  data: {
-    user: UserInfo;
-  };
+export interface InfoResult extends ApiResult<{ user: UserInfo }> {
   roles: string[];
   permissions: string[];
-  [key: string]: unknown;
 }
 
 /** Generic payload for endpoints returning only code/msg */
-export interface BasicResult {
-  code: number;
-  msg: string;
-  data?: unknown;
-  [key: string]: unknown;
-}
+export type BasicResult = ApiResult;
 
 /* ==================== Captcha ==================== */
 

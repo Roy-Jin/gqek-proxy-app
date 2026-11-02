@@ -36,6 +36,7 @@
 import { ref } from "vue";
 import { http } from "@/api";
 import { useToast } from "@/composables/useToast";
+import { errorMessage } from "@/utils/error";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 
@@ -78,7 +79,7 @@ async function runRequest() {
         : await http.post<unknown>(url, parsed);
     result.value = JSON.stringify(res.data, null, 2);
   } catch (e) {
-    result.value = "请求失败: " + (e instanceof Error ? e.message : String(e));
+    result.value = "请求失败: " + errorMessage(e);
   } finally {
     requesting.value = false;
   }

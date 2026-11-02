@@ -1,4 +1,5 @@
 import { http } from "../client.js";
+import type { PagedResult } from "../types.js";
 import type { RequestOptions } from "../../utils/request.js";
 
 /** Todo list query params */
@@ -36,13 +37,7 @@ export interface TodoMessage {
 }
 
 /** Paged response of todolistApp (flat, uses rows) */
-export interface TodoListResult {
-  code: number;
-  msg: string;
-  total: number;
-  rows: TodoMessage[];
-  [key: string]: unknown;
-}
+export type TodoListResult = PagedResult<TodoMessage>;
 
 /**
  * Get my todo message list

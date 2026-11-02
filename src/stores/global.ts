@@ -23,9 +23,6 @@ export const useGlobal = defineStore("global", {
     authChecked: false,
     user: null as UserBrief | null,
   }),
-  getters: {
-    nickName: (state) => state.user?.nickName || "",
-  },
   actions: {
     setToken(value: string) {
       this.token = value.trim();

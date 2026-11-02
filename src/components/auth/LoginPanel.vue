@@ -10,24 +10,7 @@
       </div>
 
       <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-5 sm:p-6">
-        <div class="flex p-1 rounded-xl bg-gray-100 mb-4">
-          <button
-            type="button"
-            class="flex-1 py-1.5 text-sm rounded-lg transition-colors"
-            :class="mode === 'account' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'"
-            @click="setMode('account')"
-          >
-            账号登录
-          </button>
-          <button
-            type="button"
-            class="flex-1 py-1.5 text-sm rounded-lg transition-colors"
-            :class="mode === 'key' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'"
-            @click="setMode('key')"
-          >
-            密钥登录
-          </button>
-        </div>
+        <AppSegmentedTabs :items="loginModes" :active="mode" block @change="setMode" />
 
         <form v-if="mode === 'account'" class="flex flex-col gap-3" @submit.prevent="submit">
           <AppInput v-model="form.username" label="账号" placeholder="请输入账号" autocomplete="username" />
@@ -107,22 +90,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { getCaptchaImage, appLogin } from "@/api";
 import { useAccountSession } from "@/composables/useAccountSession";
-import { useAccountsStore } from "@/stores/accounts";
+import { useAccountSwitch } from "@/composables/useAccountSwitch";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";
 import { useEnvStore } from "@/stores/env";
+import { errorMessage } from "@/utils/error";
+import { isTempKey, parseTempKey } from "@/utils/tempKey";
 import AppInput from "@/components/ui/AppInput.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppModal from "@/components/ui/AppModal.vue";
+import AppSegmentedTabs from "@/components/ui/AppSegmentedTabs.vue";
 
 const auth = useGlobal();
 const env = useEnvStore();
 const toast = useToast();
-const accounts = useAccountsStore();
 const session = useAccountSession();
+const { switchingId, errorMsg: switchError, savedAccounts, switchTo, resetError } = useAccountSwitch();
 
 const mode = ref<"account" | "key">("account");
 const form = ref({ username: "", password: "", code: "" });
@@ -132,30 +118,16 @@ const loading = ref(false);
 const errorMsg = ref("");
 const manualToken = ref("");
 const showAccounts = ref(false);
-const switchingId = ref("");
-const switchError = ref("");
 
-/** Token-free projection; the template never sees stored credentials. */
-const savedAccounts = computed(() => accounts.summaries);
+const loginModes: { label: string; value: "account" | "key" }[] = [
+  { label: "账号登录", value: "account" },
+  { label: "密钥登录", value: "key" },
+];
 
 function closeAccounts() {
   if (switchingId.value) return;
   showAccounts.value = false;
-  switchError.value = "";
-}
-
-async function switchTo(userId: string) {
-  if (switchingId.value) return;
-  const account = accounts.accounts.find((item) => item.userId === userId);
-  if (!account) return;
-  switchingId.value = userId;
-  switchError.value = "";
-  try {
-    await session.switchAccount(account);
-  } catch (e) {
-    switchError.value = "账号切换失败：" + (e instanceof Error ? e.message : String(e));
-    switchingId.value = "";
-  }
+  resetError();
 }
 
 function setMode(m: "account" | "key") {
@@ -163,13 +135,33 @@ function setMode(m: "account" | "key") {
   errorMsg.value = "";
 }
 
+function formatExpiry(ms: number): string {
+  return new Date(ms).toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 function submitToken() {
-  const v = manualToken.value.trim();
-  if (!v) {
+  const raw = manualToken.value.trim();
+  if (!raw) {
     errorMsg.value = "请输入密钥";
     return;
   }
-  auth.setToken(v);
+
+  let token = raw;
+  if (isTempKey(raw)) {
+    const parsed = parseTempKey(raw);
+    if (!parsed.ok) {
+      errorMsg.value = parsed.message;
+      return;
+    }
+    token = parsed.token;
+  }
+
+  errorMsg.value = "";
+  auth.setToken(token);
   auth.isAuthed = true;
   void session.refreshCurrentUser();
 }
@@ -182,7 +174,7 @@ async function fetchCaptcha() {
     captchaImg.value = "data:image/gif;base64," + body.data.img;
     captchaUuid.value = body.data.uuid;
   } catch (e) {
-    errorMsg.value = "验证码加载失败：" + (e instanceof Error ? e.message : String(e));
+    errorMsg.value = "验证码加载失败：" + errorMessage(e);
   }
 }
 
@@ -209,7 +201,7 @@ async function submit() {
     void session.refreshCurrentUser();
     toast.success("登录成功，欢迎回来");
   } catch (e) {
-    errorMsg.value = e instanceof Error ? e.message : String(e);
+    errorMsg.value = errorMessage(e);
     form.value.code = "";
     fetchCaptcha();
   } finally {

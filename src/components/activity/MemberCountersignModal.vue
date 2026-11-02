@@ -50,11 +50,7 @@
           <!-- Member list -->
           <div class="flex-1 overflow-y-auto">
             <div v-if="loading && members.length === 0" class="divide-y divide-gray-100">
-              <div v-for="i in 5" :key="i" class="animate-pulse space-y-2 p-4 sm:p-5">
-                <div class="h-3.5 w-1/4 rounded bg-gray-200"></div>
-                <div class="h-3 w-3/4 rounded bg-gray-100"></div>
-                <div class="h-3 w-1/2 rounded bg-gray-100"></div>
-              </div>
+              <AppSkeletonRows />
             </div>
 
             <ul v-else-if="members.length > 0" class="divide-y divide-gray-100">
@@ -72,14 +68,7 @@
                     :checked="selectedIds.includes(m.studentId)"
                     @change="toggleSelect(m.studentId)"
                   />
-                  <span
-                    class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all duration-150"
-                    :class="selectedIds.includes(m.studentId) ? 'border-primary bg-primary text-white' : 'border-gray-300 bg-white text-transparent'"
-                  >
-                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  </span>
+                  <AppCheckCircle :checked="selectedIds.includes(m.studentId)" />
                 </label>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-baseline justify-between gap-2">
@@ -102,14 +91,7 @@
           <!-- Action bar -->
           <div v-if="selectedIds.length > 0" class="flex items-center gap-2 border-t border-gray-100 px-4 py-3 sm:px-5">
             <button type="button" class="flex select-none items-center gap-1.5 text-sm text-gray-600" @click="toggleSelectAll">
-              <span
-                class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all duration-150"
-                :class="allSelected ? 'border-primary bg-primary text-white' : 'border-gray-300 bg-white text-transparent'"
-              >
-                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
+              <AppCheckCircle :checked="allSelected" />
               全选
             </button>
             <span class="text-sm text-gray-500">已选 <span class="font-semibold text-primary-fg">{{ selectedIds.length }}</span> 人</span>
@@ -125,13 +107,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import { listActivityMembers, countersign } from "@/api";
 import type { MemberInfo } from "@/api";
 import { useToast } from "@/composables/useToast";
+import { useMultiSelect } from "@/composables/useMultiSelect";
+import { errorMessage } from "@/utils/error";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
+import AppCheckCircle from "@/components/ui/AppCheckCircle.vue";
+import AppSkeletonRows from "@/components/ui/AppSkeletonRows.vue";
 
 const props = defineProps<{ open: boolean; activityId: string }>();
 const emit = defineEmits<{ close: [] }>();
@@ -143,12 +129,10 @@ const loading = ref(false);
 const errorMsg = ref("");
 const keyword = ref("");
 const signFlag = ref("");
-const selectedIds = ref<string[]>([]);
 const countersigning = ref(false);
 
-const allSelected = computed(
-  () => members.value.length > 0 && members.value.every((m) => selectedIds.value.includes(m.studentId))
-);
+const { selectedIds, allSelected, toggle: toggleSelect, toggleAll: toggleSelectAll, clear: clearSelection } =
+  useMultiSelect(members, (member) => member.studentId);
 
 let requestSeq = 0;
 
@@ -156,7 +140,7 @@ async function fetchList() {
   const seq = ++requestSeq;
   loading.value = true;
   errorMsg.value = "";
-  selectedIds.value = [];
+  clearSelection();
   try {
     const body = (
       await listActivityMembers({
@@ -170,24 +154,10 @@ async function fetchList() {
     members.value = body.rows;
   } catch (e) {
     if (seq !== requestSeq) return;
-    errorMsg.value = e instanceof Error ? e.message : String(e);
+    errorMsg.value = errorMessage(e);
   } finally {
     if (seq === requestSeq) loading.value = false;
   }
-}
-
-function toggleSelect(id: string) {
-  const i = selectedIds.value.indexOf(id);
-  if (i >= 0) selectedIds.value.splice(i, 1);
-  else selectedIds.value.push(id);
-}
-
-function toggleSelectAll() {
-  selectedIds.value = allSelected.value ? [] : members.value.map((m) => m.studentId);
-}
-
-function clearSelection() {
-  selectedIds.value = [];
 }
 
 async function doCountersign(signType: string) {
@@ -207,7 +177,7 @@ async function doCountersign(signType: string) {
     toast.success("操作成功");
     fetchList();
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : String(e));
+    toast.error(errorMessage(e));
   } finally {
     countersigning.value = false;
   }
@@ -217,19 +187,7 @@ watch(
   () => props.open,
   (open) => {
     if (!open) return;
-    selectedIds.value = [];
     fetchList();
   }
 );
 </script>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-</style>
