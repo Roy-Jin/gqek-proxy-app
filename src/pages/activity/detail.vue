@@ -12,7 +12,7 @@
       <h2 class="text-lg font-semibold text-gray-900">活动详情</h2>
     </div>
 
-    <AppSpinner v-if="loading && !detail" text="加载中..." />
+    <AppSpinner v-if="loading && !detail" />
 
     <AppCard v-else-if="errorMsg" class="text-center">
       <div class="flex flex-col items-center gap-3 text-gray-500">
@@ -265,7 +265,8 @@ const classHours = computed(() =>
 );
 
 function back() {
-  router.back();
+  if (window.history.length > 1) router.back();
+  else router.replace("/activity");
 }
 
 async function fetchDetail() {

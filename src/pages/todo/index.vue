@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { listTodoApp, auditInfo } from "@/api";
 import type { TodoMessage } from "@/api";
 import { useToast } from "@/composables/useToast";
@@ -158,10 +158,16 @@ const allSelected = computed(() =>
   rows.value.length > 0 && rows.value.every((r) => selectedIds.value.includes(r.businessId))
 );
 
+/** Min gap between refresh taps; only absorbs repeat clicks. */
+const REFRESH_GAP_MS = 400;
+
 let requestSeq = 0;
+let lastRequestAt = 0;
+let gapTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function fetchList() {
   const seq = ++requestSeq;
+  lastRequestAt = Date.now();
   loading.value = true;
   errorMsg.value = "";
   selectedIds.value = [];
@@ -190,6 +196,9 @@ function switchTab(status: number) {
   if (activeTab.value === status) return;
   activeTab.value = status;
   pageNum.value = 1;
+  // Clear the previous tab's rows so no stale cross-tab data stays visible.
+  rows.value = [];
+  total.value = 0;
   fetchList();
 }
 
@@ -200,7 +209,17 @@ function changePage(p: number) {
 }
 
 function refresh() {
-  fetchList();
+  if (loading.value) return;
+  const wait = Math.max(0, REFRESH_GAP_MS - (Date.now() - lastRequestAt));
+  if (wait === 0) {
+    fetchList();
+    return;
+  }
+  if (gapTimer) return;
+  gapTimer = setTimeout(() => {
+    gapTimer = null;
+    fetchList();
+  }, wait);
 }
 
 function toggleSelect(id: string) {
@@ -244,4 +263,9 @@ async function runAudit(auditStatus: number) {
 }
 
 onMounted(fetchList);
+
+onUnmounted(() => {
+  if (gapTimer) clearTimeout(gapTimer);
+  gapTimer = null;
+});
 </script>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import AppIcon from "./AppIcon.vue";
+import { useEnvStore } from "@/stores/env";
 
-withDefaults(defineProps<{ text?: string }>(), { text: "暂无数据" });
+const props = defineProps<{ text?: string }>();
+const env = useEnvStore();
 </script>
 
 <template>
@@ -9,7 +11,7 @@ withDefaults(defineProps<{ text?: string }>(), { text: "暂无数据" });
     <slot name="icon">
       <AppIcon name="inbox" class="h-10 w-10 opacity-60" />
     </slot>
-    <p class="text-sm">{{ text }}</p>
+    <p class="text-sm">{{ props.text ?? env.ui.emptyText }}</p>
     <slot />
   </div>
 </template>

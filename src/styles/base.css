@@ -24,6 +24,7 @@ html,
 body,
 #app {
     height: 100%;
+    height: 100dvh;
 }
 
 body {
@@ -32,9 +33,22 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
     background-color: #f5f6f8;
     color: #1f2937;
     user-select: none;
+}
+
+@media (max-width: 640px) {
+    /* Keep 16px form text so WebView does not zoom on focus */
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
 }
 
 input,

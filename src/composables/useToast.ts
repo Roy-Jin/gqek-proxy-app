@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { useEnvStore } from "@/stores/env";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -16,7 +17,9 @@ function remove(id: number) {
 }
 
 export function useToast() {
-  function push(type: ToastType, message: string, duration = 3000) {
+  const env = useEnvStore();
+
+  function push(type: ToastType, message: string, duration = env.ui.toastDurationMs) {
     const id = ++seq;
     toasts.value.push({ id, type, message });
     if (duration > 0) {

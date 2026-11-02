@@ -7,11 +7,8 @@
 import { listTodoApp } from "../src/api/index.js";
 import type { RequestResult } from "../src/utils/request.js";
 
-/** Hardcoded test token; API_TOKEN env var takes precedence */
-const FALLBACK_TOKEN =
-  "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpblR5cGUiOiJsb2dpbiIsImxvZ2luSWQiOiIxOjE5NzcyNTYyOTU0NTM0NzA3MjgiLCJyblN0ciI6IlN4cHdBM2pVR2IwT0o4Um1aRkFaaHJrZVBINlhvclFrIiwidXNlcklkIjoxOTc3MjU2Mjk1NDUzNDcwNzI4fQ.U8KvlYMiE1gMQnlxwDLem-_ZZtnCWOhguwUypYHidfM";
-
-const token = process.env.API_TOKEN ?? FALLBACK_TOKEN;
+/** Token comes from env only; never hardcode credentials. */
+const token = process.env.API_TOKEN?.trim();
 
 let failures = 0;
 
@@ -41,9 +38,7 @@ async function runCase(
 }
 
 async function main(): Promise<void> {
-  console.log(
-    `Token source: ${process.env.API_TOKEN ? "API_TOKEN env" : "hardcoded fallback"}`
-  );
+  console.log(`Token source: ${token ? "API_TOKEN env" : "none"}`);
 
   // Probe messageStatus variants to find the correct filter values
   for (const status of [undefined, 1, 0, 2, 3] as const) {

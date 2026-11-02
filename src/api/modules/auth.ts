@@ -63,6 +63,8 @@ export interface LoginResult {
 export interface UserInfo {
   userId: number | string;
   userName: string;
+  nickName: string;
+  className: string;
   avatar: string | null;
   schoolId: number | string;
   schoolName: string;

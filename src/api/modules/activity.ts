@@ -34,8 +34,12 @@ export interface ActivityInfo {
   activityId: string;
   activityName: string;
   activityAvatarUrl: string | null;
-  /** Organizer name */
+  /** Organizer (hosting org) name */
   maintainerName: string;
+  /** Hosting org id; used to filter activities to the current user's org */
+  maintainerId: string | null;
+  /** Creator user id */
+  createBy: string | null;
   teacherName: string | null;
   activityClassifyName: string;
   activityLocation: string;
@@ -91,7 +95,12 @@ export interface VolunteerActivityInfo {
   activityId: string;
   activityName: string;
   activityAvatarUrl: string | null;
+  /** Organizer (hosting org) name */
   maintainerName: string;
+  /** Hosting org id; used to filter activities to the current user's org */
+  maintainerId: string | null;
+  /** Creator user id */
+  createBy: string | null;
   teacherName: string | null;
   activityClassifyName: string;
   activityLocation: string;

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "test:api": "tsx scripts/test-api.ts"
+    "test:api": "tsx scripts/test-api.ts",
+    "probe:activity": "tsx scripts/probe-activity.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

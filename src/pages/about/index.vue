@@ -2,22 +2,23 @@
   <div class="p-4 sm:p-6 max-w-3xl mx-auto">
     <div class="mb-4">
       <h2 class="text-lg font-semibold text-gray-900">关于</h2>
-      <p class="mt-0.5 text-sm text-gray-500">应用信息与账号管理</p>
+      <p class="mt-0.5 text-sm text-gray-500">{{ env.about.subtitle }}</p>
     </div>
 
-    <!-- Team info -->
+    <!-- Current account & team -->
     <AppCard class="mb-4">
       <div v-if="teamLoading" class="flex items-center gap-3">
         <div class="h-14 w-14 rounded-xl bg-gray-100 animate-pulse shrink-0"></div>
         <div class="space-y-2">
-          <div class="h-4 bg-gray-100 rounded w-32 animate-pulse"></div>
-          <div class="h-3 bg-gray-100 rounded w-20 animate-pulse"></div>
+          <div class="h-4 w-24 rounded bg-gray-100 animate-pulse"></div>
+          <div class="h-3 w-32 rounded bg-gray-100 animate-pulse"></div>
+          <div class="h-3 w-28 rounded bg-gray-100 animate-pulse"></div>
         </div>
       </div>
 
-      <div v-else-if="team" class="flex items-center gap-3">
+      <div v-else class="flex items-center gap-3">
         <img
-          v-if="team.teamAvatar"
+          v-if="team?.teamAvatar"
           :src="team.teamAvatar"
           :alt="team.teamName"
           class="h-14 w-14 rounded-xl object-cover shrink-0"
@@ -28,16 +29,19 @@
         >
           {{ teamInitial }}
         </div>
-        <div class="min-w-0">
-          <p class="text-xs text-gray-400">团队</p>
-          <p class="mt-0.5 text-base font-semibold text-gray-900 truncate">{{ team.teamName }}</p>
-          <p v-if="schoolName" class="mt-0.5 text-xs text-gray-500 truncate">{{ schoolName }}</p>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs text-gray-400">当前账号</p>
+          <p class="mt-0.5 text-base font-semibold text-gray-900 truncate">{{ userNameLabel }}</p>
+          <p class="mt-0.5 text-xs text-gray-500 truncate">{{ teamLabel }}</p>
+          <p class="mt-0.5 text-xs text-gray-500 truncate">{{ schoolLabel }}</p>
         </div>
-      </div>
-
-      <div v-else>
-        <p class="text-xs text-gray-400">团队</p>
-        <p class="mt-1 text-base font-semibold text-gray-900">{{ schoolName || '暂无团队信息' }}</p>
+        <button
+          type="button"
+          class="shrink-0 rounded-lg px-2 py-1 text-xs text-primary transition-colors hover:bg-primary-soft"
+          @click="openAccounts"
+        >
+          切换
+        </button>
       </div>
     </AppCard>
 
@@ -46,7 +50,7 @@
       <div class="divide-y divide-gray-100">
         <button
           type="button"
-          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-100"
           @click="openUpdate"
         >
           <span class="flex items-center gap-2">
@@ -57,15 +61,16 @@
         </button>
         <button
           type="button"
-          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-100"
           @click="showDevStatement = true"
         >
-          <span>开发者声明</span>
+          <span>{{ env.developer.statementTitle }}</span>
           <AppIcon name="chevron-right" class="h-4 w-4 text-gray-400" />
         </button>
         <button
+          v-if="debugUnlocked"
           type="button"
-          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+          class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-100"
           @click="goDebug"
         >
           <span>开发者调试</span>
@@ -78,18 +83,34 @@
       退出登录
     </AppButton>
 
-    <!-- Developer statement dialog -->
-    <AppModal :open="showDevStatement" title="开发者声明" @close="showDevStatement = false">
-      <p class="mt-2 text-sm text-gray-500 leading-relaxed">
-        本系统面向组织负责人内部使用，未经授权请勿外传；该软件仅供学习交流使用，如有任何侵权行为，请联系作者（QQ 724011786）删除。
+    <!-- Developer statement dialog: hold the confirm button for 5s to unlock the debug entry -->
+    <AppModal :open="showDevStatement" :title="env.developer.statementTitle" @close="showDevStatement = false">
+      <p class="mt-2 text-sm text-gray-500 leading-relaxed select-none">
+        {{ env.developer.statementText }}
       </p>
-      <AppButton variant="secondary" block class="mt-4" @click="showDevStatement = false">
+      <AppButton
+        variant="secondary"
+        block
+        class="mt-4 select-none [-webkit-touch-callout:none]"
+        @click="onConfirmStatement"
+        @touchstart="startPress"
+        @touchend="cancelPress"
+        @touchcancel="cancelPress"
+        @mousedown="startPress"
+        @mouseup="cancelPress"
+        @mouseleave="cancelPress"
+        @contextmenu.prevent
+      >
         知道了
       </AppButton>
     </AppModal>
 
     <!-- Update check dialog -->
     <AppModal :open="showUpdate" title="检查更新" @close="showUpdate = false">
+      <p v-if="currentVersion" class="mt-2 text-center text-xs text-gray-400">
+        当前版本 v{{ currentVersion }}
+      </p>
+
       <!-- Checking -->
       <div v-if="updateState === 'checking'" class="mt-2 flex items-center justify-center gap-2 py-4">
         <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-primary"></span>
@@ -135,6 +156,41 @@
       </template>
     </AppModal>
 
+    <!-- Account switch dialog -->
+    <AppModal :open="showAccounts" title="切换账号" @close="closeAccounts">
+      <div v-if="savedAccounts.length" class="mt-3 max-h-64 space-y-2 overflow-auto">
+        <div
+          v-for="account in savedAccounts"
+          :key="account.userId"
+          class="flex items-center gap-2 rounded-xl border p-3 transition-colors"
+          :class="account.userId === currentUserId
+            ? 'border-primary/40 bg-primary-soft'
+            : 'border-gray-200 hover:bg-gray-50 cursor-pointer'"
+          @click="onAccountClick(account.userId)"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-gray-900 truncate">{{ account.userName || "未提供" }}</p>
+            <p class="mt-0.5 text-xs text-gray-500 truncate">ID：{{ account.userId || "未提供" }}</p>
+          </div>
+          <span v-if="account.userId === currentUserId" class="shrink-0 text-[11px] text-primary">当前</span>
+          <button
+            v-else
+            type="button"
+            class="shrink-0 rounded-lg px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-50"
+            :disabled="!!switchingId"
+            @click.stop="removeAccount(account.userId)"
+          >
+            移除
+          </button>
+        </div>
+      </div>
+      <p v-else class="mt-3 text-center text-sm text-gray-500">暂无已保存的账号</p>
+      <p v-if="switchError" class="mt-2 text-xs text-red-500 break-all">{{ switchError }}</p>
+      <AppButton variant="secondary" block class="mt-3" @click="addAccount">
+        添加 / 登录新账号
+      </AppButton>
+    </AppModal>
+
     <!-- Logout confirmation dialog -->
     <AppModal :open="showLogoutConfirm" title="退出登录" @close="showLogoutConfirm = false">
       <p class="mt-2 text-sm text-gray-500 text-center">确定要退出当前账号吗？</p>
@@ -151,21 +207,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { listTeam, logout as logoutApi } from "@/api";
 import type { TeamInfo } from "@/api";
+import { useAccountSession } from "@/composables/useAccountSession";
+import { useDebugUnlock } from "@/composables/useDebugUnlock";
+import { useAccountsStore } from "@/stores/accounts";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";
 import { useAppUpdate } from "@/composables/useAppUpdate";
+import { useEnvStore } from "@/stores/env";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppModal from "@/components/ui/AppModal.vue";
 
 const auth = useGlobal();
+const env = useEnvStore();
 const router = useRouter();
 const toast = useToast();
+const accounts = useAccountsStore();
+const session = useAccountSession();
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);
@@ -173,6 +236,9 @@ const showDevStatement = ref(false);
 const showUpdate = ref(false);
 const showLogoutConfirm = ref(false);
 const loggingOut = ref(false);
+const showAccounts = ref(false);
+const switchingId = ref("");
+const switchError = ref("");
 
 const {
   state: updateState,
@@ -184,8 +250,77 @@ const {
   downloadAndInstall,
 } = useAppUpdate();
 
-const schoolName = auth.user?.schoolName || "";
+const savedAccounts = computed(() => accounts.summaries);
+const currentUserId = computed(() => auth.user?.userId || "");
+const userNameLabel = computed(() => auth.user?.userName?.trim() || "未提供");
+const schoolLabel = computed(() => auth.user?.schoolName?.trim() || "未提供");
+const teamLabel = computed(
+  () => team.value?.teamName?.trim() || auth.user?.orgName?.trim() || "未提供"
+);
 const teamInitial = computed(() => (team.value?.teamName ?? "").charAt(0).toUpperCase() || "团");
+
+const { unlocked: debugUnlocked, startPress, cancelPress, shouldBlockClick } = useDebugUnlock();
+
+// Short press only closes the dialog; the click fired by releasing a completed hold is ignored.
+function onConfirmStatement() {
+  if (shouldBlockClick()) return;
+  showDevStatement.value = false;
+}
+
+watch(debugUnlocked, (value) => {
+  if (!value) return;
+  showDevStatement.value = false;
+  toast.success("开发者调试已解锁");
+});
+
+// Closing the statement dialog must abort a pending hold
+watch(showDevStatement, (open) => {
+  if (!open) cancelPress();
+});
+
+function openAccounts() {
+  switchError.value = "";
+  showAccounts.value = true;
+}
+
+function closeAccounts() {
+  if (switchingId.value) return;
+  showAccounts.value = false;
+  switchError.value = "";
+}
+
+function onAccountClick(userId: string) {
+  if (userId === currentUserId.value) return;
+  void switchTo(userId);
+}
+
+async function switchTo(userId: string) {
+  if (switchingId.value) return;
+  const account = accounts.accounts.find((item) => item.userId === userId);
+  if (!account) return;
+  switchingId.value = userId;
+  switchError.value = "";
+  try {
+    await session.switchAccount(account);
+  } catch (e) {
+    switchError.value = "账号切换失败：" + (e instanceof Error ? e.message : String(e));
+    switchingId.value = "";
+  }
+}
+
+function removeAccount(userId: string) {
+  if (userId === currentUserId.value) {
+    toast.error("不能移除当前登录账号");
+    return;
+  }
+  accounts.forget(userId);
+  toast.success("已移除保存的账号");
+}
+
+function addAccount() {
+  showAccounts.value = false;
+  session.beginAddAccount();
+}
 
 function formatSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -223,6 +358,7 @@ async function logout() {
     } catch {
       /* ignore network/server errors during logout */
     }
+    session.forgetCurrent();
     auth.logout();
     toast.success("已安全退出登录");
     router.replace("/");
@@ -232,6 +368,7 @@ async function logout() {
 }
 
 onMounted(() => {
+  void session.refreshCurrentUser();
   void fetchTeam();
   // Silent check: only drives the red dot on the "检查更新" entry
   void checkForUpdate();

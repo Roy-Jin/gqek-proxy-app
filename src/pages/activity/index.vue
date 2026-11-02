@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-lg font-semibold text-gray-900">活动管理</h2>
-        <p class="mt-0.5 text-sm text-gray-500">管理活动信息</p>
+        <p class="mt-0.5 text-sm text-gray-500">本组织主办的活动</p>
       </div>
       <AppButton variant="secondary" size="sm" :loading="loading" @click="refresh">
         <AppIcon name="refresh" class="h-4 w-4" />
@@ -25,7 +25,7 @@
       </button>
     </div>
 
-    <!-- Loading skeleton -->
+    <!-- Loading skeleton (first load) -->
     <div v-if="loading && rows.length === 0" class="space-y-3">
       <div
         v-for="i in 5"
@@ -54,7 +54,7 @@
 
     <!-- Empty state -->
     <AppCard v-else-if="rows.length === 0">
-      <AppEmpty text="暂无活动记录" />
+      <AppEmpty text="暂无本组织活动记录" />
     </AppCard>
 
     <!-- Activity list -->
@@ -62,7 +62,7 @@
       <article
         v-for="item in rows"
         :key="item.activityId"
-        class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-100 transition-colors hover:bg-gray-50 cursor-pointer"
+        class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-200/70 shadow-sm transition-all duration-200 hover:border-gray-300 hover:shadow-md active:bg-gray-50 cursor-pointer"
         @click="openDetail(item)"
       >
         <div class="flex flex-col items-center gap-1.5 shrink-0 w-20 sm:w-24">
@@ -117,29 +117,35 @@
       </article>
     </div>
 
-    <AppPagination
-      v-if="total > 0"
-      :page="pageNum"
-      :total="total"
-      :page-size="pageSize"
-      :loading="loading"
-      @change="changePage"
-    />
+    <!-- Manual load more: available for both empty and non-empty lists -->
+    <div v-if="!loading && !(errorMsg && rows.length === 0)" class="py-3 text-center">
+      <AppButton
+        v-if="!noMore"
+        variant="secondary"
+        size="sm"
+        :loading="loadingMore"
+        @click="loadMore"
+      >
+        <AppIcon name="refresh" class="h-4 w-4" />
+        加载更多
+      </AppButton>
+      <span v-else-if="rows.length > 0" class="text-sm text-gray-400">没有更多了</span>
+    </div>
 
     <p v-if="errorMsg && rows.length !== 0" class="mt-4 text-sm text-red-600">{{ errorMsg }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel } from "@/api";
+import type { ActivityInfo, VolunteerActivityInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppCard from "@/components/ui/AppCard.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
-import AppPagination from "@/components/ui/AppPagination.vue";
 
 type ActivityTab = "volunteer" | "sports";
 
@@ -158,14 +164,12 @@ interface ActivityItem {
   activityEndTime: string;
 }
 
+const PAGE_SIZE = 10;
+/** Pull one extra page when a batch yields fewer own-org rows than this. */
+const MIN_BATCH_ITEMS = 3;
+
 const auth = useGlobal();
 const router = useRouter();
-const pageSize = 10;
-const pageNum = ref(1);
-const total = ref(0);
-const rows = ref<ActivityItem[]>([]);
-const loading = ref(false);
-const errorMsg = ref("");
 
 const tabs = [
   { label: "志愿", value: "volunteer" },
@@ -173,64 +177,151 @@ const tabs = [
 ] as const;
 
 const activeTab = ref<ActivityTab>("volunteer");
+const rows = ref<ActivityItem[]>([]);
+const loading = ref(false);
+const loadingMore = ref(false);
+const noMore = ref(false);
+const errorMsg = ref("");
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)));
-
+let serverPage = 1;
+let orgMaintainerIds = new Set<string>();
+let seenIds = new Set<string>();
 let requestSeq = 0;
 
-async function fetchList() {
-  const seq = ++requestSeq;
-  loading.value = true;
-  errorMsg.value = "";
-  try {
-    if (activeTab.value === "volunteer") {
-      const body = (
-        await listMyVolunteerActivityByStudent({
-          pageSize,
-          pageNum: pageNum.value,
-          type: 10,
+function mapVolunteer(r: VolunteerActivityInfo): ActivityItem {
+  return {
+    activityId: r.activityId,
+    activityName: r.activityName,
+    activityAvatarUrl: r.activityAvatarUrl,
+    maintainerName: r.maintainerName,
+    teacherName: r.teacherName,
+    activityClassifyName: r.activityClassifyName,
+    activityLocation: r.activityLocation,
+    duration: r.serviceTime ?? r.attendTime ?? "",
+    memberNum: r.memberNum,
+    status: r.status,
+    activityStartTime: r.activityStartTime,
+    activityEndTime: r.activityEndTime,
+  };
+}
+
+function mapSports(r: ActivityInfo): ActivityItem {
+  return {
+    activityId: r.activityId,
+    activityName: r.activityName,
+    activityAvatarUrl: r.activityAvatarUrl,
+    maintainerName: r.maintainerName,
+    teacherName: r.teacherName,
+    activityClassifyName: r.activityClassifyName,
+    activityLocation: r.activityLocation,
+    duration: r.attendTime,
+    memberNum: r.memberNum,
+    status: r.status,
+    activityStartTime: r.activityStartTime,
+    activityEndTime: r.activityEndTime,
+  };
+}
+
+/**
+ * Org anchor: maintainerId of rows the current user created. type=1 includes
+ * own-created activities, so no extra type=10 request is needed.
+ */
+function collectAnchors(list: Array<ActivityInfo | VolunteerActivityInfo>) {
+  const userId = String(auth.user?.userId ?? "");
+  if (!userId) return;
+  for (const r of list) {
+    if (String(r.createBy ?? "") === userId && r.maintainerId) {
+      orgMaintainerIds.add(String(r.maintainerId));
+    }
+  }
+}
+
+/** Dedup by activityId, keep rows whose maintainerId belongs to the anchor set. */
+function selectOrgRows(
+  tab: ActivityTab,
+  list: Array<ActivityInfo | VolunteerActivityInfo>
+): ActivityItem[] {
+  const batchIds = new Set<string>();
+  const items: ActivityItem[] = [];
+  for (const r of list) {
+    const id = String(r.activityId);
+    if (batchIds.has(id) || seenIds.has(id)) continue;
+    batchIds.add(id);
+    if (!r.maintainerId || !orgMaintainerIds.has(String(r.maintainerId))) continue;
+    items.push(
+      tab === "volunteer"
+        ? mapVolunteer(r as VolunteerActivityInfo)
+        : mapSports(r as ActivityInfo)
+    );
+  }
+  return items;
+}
+
+async function requestType1(tab: ActivityTab, page: number) {
+  return (
+    tab === "volunteer"
+      ? await listMyVolunteerActivityByStudent({
+          pageSize: PAGE_SIZE,
+          pageNum: page,
+          type: 1,
           userId: auth.user?.userId ?? "",
         })
-      ).data;
-      if (seq !== requestSeq) return;
-      if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
-      rows.value = body.rows.map((r) => ({
-        activityId: r.activityId,
-        activityName: r.activityName,
-        activityAvatarUrl: r.activityAvatarUrl,
-        maintainerName: r.maintainerName,
-        teacherName: r.teacherName,
-        activityClassifyName: r.activityClassifyName,
-        activityLocation: r.activityLocation,
-        duration: r.serviceTime ?? r.attendTime ?? "",
-        memberNum: r.memberNum,
-        status: r.status,
-        activityStartTime: r.activityStartTime,
-        activityEndTime: r.activityEndTime,
-      }));
-      total.value = body.total;
-    } else {
-      const body = (
-        await listMyActivityByStudent({ pageSize, pageNum: pageNum.value, type: 1 })
-      ).data;
-      if (seq !== requestSeq) return;
-      if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
-      rows.value = body.rows.map((r) => ({
-        activityId: r.activityId,
-        activityName: r.activityName,
-        activityAvatarUrl: r.activityAvatarUrl,
-        maintainerName: r.maintainerName,
-        teacherName: r.teacherName,
-        activityClassifyName: r.activityClassifyName,
-        activityLocation: r.activityLocation,
-        duration: r.attendTime,
-        memberNum: r.memberNum,
-        status: r.status,
-        activityStartTime: r.activityStartTime,
-        activityEndTime: r.activityEndTime,
-      }));
-      total.value = body.total;
-    }
+      : await listMyActivityByStudent({
+          pageSize: PAGE_SIZE,
+          pageNum: page,
+          type: 1,
+        })
+  ).data;
+}
+
+/**
+ * Load one batch of PAGE_SIZE rows. When the batch yields fewer than
+ * MIN_BATCH_ITEMS own-org rows, one extra page is pulled and merged.
+ * The top-up happens at most once per batch and never recurses.
+ */
+async function fetchBatch(tab: ActivityTab, seq: number) {
+  const collected: Array<ActivityInfo | VolunteerActivityInfo> = [];
+
+  async function pullPage(): Promise<boolean> {
+    const body = await requestType1(tab, serverPage);
+    if (seq !== requestSeq) return false;
+    if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
+    serverPage++;
+    if (body.rows.length < PAGE_SIZE) noMore.value = true;
+    collected.push(...body.rows);
+    return true;
+  }
+
+  if (!(await pullPage())) return;
+  collectAnchors(collected);
+  let items = selectOrgRows(tab, collected);
+
+  if (items.length < MIN_BATCH_ITEMS && !noMore.value) {
+    if (!(await pullPage())) return;
+    collectAnchors(collected);
+    items = selectOrgRows(tab, collected);
+  }
+
+  for (const item of items) {
+    seenIds.add(item.activityId);
+    rows.value.push(item);
+  }
+}
+
+/** Reset tab state and render the first batch; no throttle involved. */
+async function initTab() {
+  const seq = ++requestSeq;
+  const tab = activeTab.value;
+  loading.value = true;
+  loadingMore.value = false;
+  errorMsg.value = "";
+  noMore.value = false;
+  serverPage = 1;
+  orgMaintainerIds = new Set();
+  seenIds = new Set();
+  rows.value = [];
+  try {
+    await fetchBatch(tab, seq);
   } catch (e) {
     if (seq !== requestSeq) return;
     errorMsg.value = e instanceof Error ? e.message : String(e);
@@ -239,21 +330,30 @@ async function fetchList() {
   }
 }
 
+async function loadMore() {
+  if (loading.value || loadingMore.value || noMore.value) return;
+  const seq = requestSeq;
+  const tab = activeTab.value;
+  loadingMore.value = true;
+  try {
+    await fetchBatch(tab, seq);
+  } catch (e) {
+    if (seq !== requestSeq) return;
+    errorMsg.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    if (seq === requestSeq) loadingMore.value = false;
+  }
+}
+
 function switchTab(v: ActivityTab) {
   if (activeTab.value === v) return;
   activeTab.value = v;
-  pageNum.value = 1;
-  fetchList();
-}
-
-function changePage(p: number) {
-  if (p < 1 || p > totalPages.value || p === pageNum.value) return;
-  pageNum.value = p;
-  fetchList();
+  initTab();
 }
 
 function refresh() {
-  fetchList();
+  if (loading.value) return;
+  initTab();
 }
 
 function openDetail(item: ActivityItem) {
@@ -262,5 +362,5 @@ function openDetail(item: ActivityItem) {
   router.push(`/activity/detail?${query.toString()}`);
 }
 
-onMounted(fetchList);
+onMounted(initTab);
 </script>

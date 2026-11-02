@@ -1,7 +1,6 @@
 import { createClient } from "../utils/request.js";
 import { useGlobal } from "../stores/global.js";
-
-export const BASE_URL = "https://gqhw.jxmediacenter.com/prod-api";
+import { linksConfig } from "../config/env.js";
 
 /** Read token from the auth store; no active pinia (e.g. scripts) yields null */
 function getToken(): string | null {
@@ -12,4 +11,4 @@ function getToken(): string | null {
   }
 }
 
-export const http = createClient({ baseUrl: BASE_URL, getToken });
+export const http = createClient({ baseUrl: linksConfig.apiBaseUrl, getToken });

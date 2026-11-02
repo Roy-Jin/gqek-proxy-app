@@ -11,20 +11,30 @@
 
   <!-- Authed: mobile app layout -->
   <div v-else class="flex flex-col flex-1 min-h-0">
-    <header class="shrink-0 h-12 flex items-center justify-center px-4 bg-white border-b border-gray-100">
+    <header
+      class="shrink-0 flex items-center justify-center px-4 bg-white border-b border-gray-100"
+      style="height: calc(3rem + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top)"
+    >
       <div class="flex items-center gap-2">
-        <div class="h-6 w-6 rounded-md bg-primary text-white grid place-items-center text-xs font-bold">赣</div>
-        <span class="text-sm font-semibold text-gray-900">赣青二课代理平台</span>
+        <div class="h-6 w-6 rounded-md bg-primary text-white grid place-items-center text-xs font-bold">{{ env.app.logoText }}</div>
+        <span class="text-sm font-semibold text-gray-900">{{ env.app.name }}</span>
       </div>
     </header>
 
-    <main class="flex-1 min-h-0 overflow-auto">
+    <main
+      class="flex-1 min-h-0 overflow-auto overscroll-contain"
+      style="padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right)"
+    >
       <Transition :name="isSubpage ? 'subpage' : 'page'" mode="out-in">
         <RouterView />
       </Transition>
     </main>
 
-    <nav v-if="!isSubpage" class="shrink-0 bg-white/95 backdrop-blur border-t border-gray-100" style="padding-bottom: env(safe-area-inset-bottom)">
+    <nav
+      v-if="!isSubpage"
+      class="shrink-0 bg-white/95 backdrop-blur border-t border-gray-100"
+      style="padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right)"
+    >
       <div class="max-w-md mx-auto flex items-stretch">
         <RouterLink
           v-for="item in navItems"
@@ -47,6 +57,8 @@ import { computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute } from "vue-router";
 import { getInfo } from "@/api";
+import { useAccountSession, toUserBrief } from "@/composables/useAccountSession";
+import { useEnvStore } from "@/stores/env";
 import { useGlobal } from "@/stores/global";
 import LoginPanel from "@/components/auth/LoginPanel.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
@@ -54,6 +66,8 @@ import AppSpinner from "@/components/ui/AppSpinner.vue";
 import ToastHost from "@/components/ui/ToastHost.vue";
 
 const auth = useGlobal();
+const env = useEnvStore();
+const session = useAccountSession();
 const { isAuthed, authChecked } = storeToRefs(auth);
 const route = useRoute();
 
@@ -80,13 +94,12 @@ async function checkAuth() {
   try {
     const body = (await getInfo()).data;
     if (body.code === 200) {
-      auth.setUser({
-        userName: body.data.user.userName,
-        schoolName: body.data.user.schoolName,
-        userId: String(body.data.user.userId),
-      });
+      auth.setUser(toUserBrief(body));
       auth.isAuthed = true;
+      session.rememberCurrent();
     } else {
+      // Token rejected: drop the stale saved account so it no longer offers a one-click switch
+      session.forgetCurrent();
       auth.clear();
     }
   } catch {

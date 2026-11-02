@@ -4,8 +4,16 @@ export const STORE_KEY = "app-global";
 
 export interface UserBrief {
   userName: string;
+  /** Student number / account identifier from /getInfo; the only displayed account label */
+  nickName: string;
   schoolName: string;
   userId: string;
+  avatar?: string;
+  className?: string;
+  /** Raw /getInfo userType; "1" means student account in the official app */
+  userType?: string;
+  orgName?: string;
+  roles?: string[];
 }
 
 export const useGlobal = defineStore("global", {
@@ -16,7 +24,7 @@ export const useGlobal = defineStore("global", {
     user: null as UserBrief | null,
   }),
   getters: {
-    displayName: (state) => state.user?.userName || "",
+    nickName: (state) => state.user?.nickName || "",
   },
   actions: {
     setToken(value: string) {

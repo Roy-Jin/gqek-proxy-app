@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import { useEnvStore } from "@/stores/env";
 import {
   getNativeVersion,
   isNativeApp,
@@ -6,15 +7,6 @@ import {
   nativeToast,
   waitForBridge,
 } from "@/utils/nativeBridge";
-
-/** Fallback version for browser/dev where no native shell reports one. */
-export const APP_VERSION = "1.0.1";
-
-/** GitHub repo that publishes the release the app updates from. */
-export const RELEASE_API = "https://api.github.com/repos/Roy-Jin/gqek-proxy-app/releases/latest";
-
-/** Asset name expected inside each release. */
-const APK_ASSET_NAME = "gqek-proxy.apk";
 
 export interface ReleaseInfo {
   version: string;
@@ -55,8 +47,8 @@ interface GithubRelease {
   assets: GithubAsset[];
 }
 
-async function fetchLatestRelease(): Promise<ReleaseInfo> {
-  const res = await fetch(RELEASE_API, {
+async function fetchLatestRelease(releaseApiUrl: string, apkAssetName: string): Promise<ReleaseInfo> {
+  const res = await fetch(releaseApiUrl, {
     headers: { Accept: "application/vnd.github+json" },
     cache: "no-store",
   });
@@ -64,7 +56,7 @@ async function fetchLatestRelease(): Promise<ReleaseInfo> {
   const data = (await res.json()) as GithubRelease;
   const version = (data.tag_name || "").replace(/^v/i, "");
   if (!version) throw new Error("Release 中未找到版本号");
-  const apk = data.assets?.find((a) => a.name.toLowerCase() === APK_ASSET_NAME);
+  const apk = data.assets?.find((a) => a.name.toLowerCase() === apkAssetName);
   return {
     version,
     name: data.name || data.tag_name,
@@ -87,6 +79,7 @@ async function downloadThenInstall(url: string): Promise<"started" | "failed"> {
 }
 
 export function useAppUpdate() {
+  const env = useEnvStore();
   const state = ref<UpdateState>("idle");
   const currentVersion = ref("");
   const release = ref<ReleaseInfo | null>(null);
@@ -98,11 +91,19 @@ export function useAppUpdate() {
     if (state.value === "checking") return;
     state.value = "checking";
     error.value = "";
+    release.value = null;
     try {
       // Injection may lag behind app boot; wait briefly before reading the version
-      await waitForBridge();
-      currentVersion.value = (await getNativeVersion()) ?? APP_VERSION;
-      const latest = await fetchLatestRelease();
+      const ready = await waitForBridge();
+      const version = ready ? await getNativeVersion() : null;
+      if (!version) {
+        currentVersion.value = "";
+        error.value = ready ? "无法获取应用版本" : "无法获取应用版本（当前非原生环境）";
+        state.value = "error";
+        return;
+      }
+      currentVersion.value = version;
+      const latest = await fetchLatestRelease(env.links.releaseApiUrl, env.links.apkAssetName);
       release.value = latest;
       state.value =
         compareVersions(latest.version, currentVersion.value) > 0 ? "available" : "up-to-date";

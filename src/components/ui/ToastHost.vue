@@ -16,6 +16,7 @@ const dotClass: Record<string, string> = {
       name="toast"
       tag="div"
       class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end pointer-events-none"
+      style="top: calc(1rem + env(safe-area-inset-top)); right: calc(1rem + env(safe-area-inset-right))"
     >
       <div
         v-for="t in toasts"

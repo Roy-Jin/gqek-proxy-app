@@ -137,8 +137,8 @@ export async function request<T = unknown>(
     finalHeaders["encrypt-flag"] = buildEncryptFlag(aesKey);
   }
 
-  // token
-  const realToken = typeof getToken === "function" ? getToken() : token;
+  // Explicit token wins so scripts without an active pinia store can authenticate.
+  const realToken = token || (typeof getToken === "function" ? getToken() : undefined);
   if (tokenFlag && realToken) {
     finalHeaders["Authorization"] = "Bearer " + realToken;
   }
