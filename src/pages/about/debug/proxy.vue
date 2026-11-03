@@ -1,5 +1,5 @@
 <template>
-  <DebugModulePage subtitle="探测下载加速节点并管理代理记忆">
+  <DebugModulePage subtitle="探测下载加速节点并调整代理优先级">
     <DebugProxyCard />
   </DebugModulePage>
 </template>

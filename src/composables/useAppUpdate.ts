@@ -207,17 +207,13 @@ export function useAppUpdate() {
       let apk = false;
       if (target.apkUrl) {
         const resolved = await resolveDownloadUrl(target.apkUrl, {
-          proxies: env.update.downloadProxies,
+          proxies: settings.orderedProxies,
           enabled: settings.proxyEnabled,
-          preferredProxy: settings.preferredProxy,
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
         url = resolved.url;
         apk = true;
-        if (resolved.viaProxy && resolved.proxy) {
-          settings.setPreferredProxy(resolved.proxy);
-        }
       }
       if (!url) return;
       await openTarget(url, apk, target.version);

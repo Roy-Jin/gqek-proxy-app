@@ -72,11 +72,12 @@ export const linksConfig: LinksConfig = Object.freeze({
 
 export const updateConfig: UpdateConfig = Object.freeze({
   proxyEnabled: true,
+  // Priority order: ranked by measured download speed, the first available one wins.
   downloadProxies: Object.freeze([
-    "https://wget.la/",
     "https://gh.inkchills.cn/",
     "https://gh-proxy.com/",
     "https://ghproxy.net/"
+    // "https://wget.la/", // 下载速度很慢
   ]),
 });
 

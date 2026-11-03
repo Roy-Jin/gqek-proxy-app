@@ -3,7 +3,7 @@
     <div class="mb-3 flex items-start justify-between gap-3">
       <div>
         <p class="text-sm font-medium text-gray-700">下载加速代理</p>
-        <p class="mt-0.5 text-xs text-gray-400">并发探测，优先使用记忆节点</p>
+        <p class="mt-0.5 text-xs text-gray-400">按优先级顺序探测，优先使用靠上的节点</p>
       </div>
       <button
         type="button"
@@ -28,33 +28,30 @@
     <template v-else>
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div class="min-w-0 text-xs text-gray-400">
-          <p>
-            当前记忆：<span class="text-gray-600">{{ rememberedProxy || "无" }}</span>
-          </p>
           <p v-if="probed">
-            本次最快：<span class="text-gray-600">{{ fastestProxy ?? "无" }}</span>
+            本次使用：<span class="text-gray-600">{{ selectedProxy ?? "无（回退原始链接）" }}</span>
           </p>
-          <p v-if="memoryNote" class="mt-0.5 text-amber-500">{{ memoryNote }}</p>
+          <p v-else class="text-gray-400">调整顺序后建议重新检测</p>
         </div>
         <div class="flex gap-1.5">
           <AppButton variant="ghost" size="sm" :loading="probing" @click="runProbe">重新检测</AppButton>
           <AppButton
             variant="ghost"
             size="sm"
-            :disabled="!rememberedProxy"
-            @click="clearMemory"
+            :disabled="!isCustomOrder"
+            @click="resetOrder"
           >
-            清除记忆
+            重置顺序
           </AppButton>
         </div>
       </div>
 
       <div class="mt-2 space-y-1.5">
         <div
-          v-for="(proxy, index) in env.update.downloadProxies"
+          v-for="(proxy, index) in proxies"
           :key="proxy"
           class="flex items-center gap-2 rounded-lg border px-2.5 py-2"
-          :class="fastestProxy === proxy ? 'border-primary/40 bg-primary-soft' : 'border-gray-200'"
+          :class="selectedProxy === proxy ? 'border-primary/40 bg-primary-soft' : 'border-gray-200'"
         >
           <span class="shrink-0 text-[11px] text-gray-400">#{{ index + 1 }}</span>
           <div class="min-w-0 flex-1">
@@ -64,15 +61,35 @@
             </p>
           </div>
           <span
-            v-if="fastestProxy === proxy"
+            v-if="selectedProxy === proxy"
             class="shrink-0 text-[11px] font-medium text-primary"
           >
-            最快
+            将使用
           </span>
+          <div class="flex shrink-0 flex-col">
+            <button
+              type="button"
+              aria-label="上移"
+              class="px-1 leading-tight text-gray-400 transition-colors hover:text-primary disabled:opacity-30"
+              :disabled="index === 0"
+              @click="move(index, -1)"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              aria-label="下移"
+              class="px-1 leading-tight text-gray-400 transition-colors hover:text-primary disabled:opacity-30"
+              :disabled="index === proxies.length - 1"
+              @click="move(index, 1)"
+            >
+              ↓
+            </button>
+          </div>
         </div>
       </div>
 
-      <p v-if="probed && !fastestProxy" class="mt-2 text-xs text-gray-400">
+      <p v-if="probed && !selectedProxy" class="mt-2 text-xs text-gray-400">
         全部代理不可用，下载时将回退为原始链接
       </p>
     </template>
@@ -106,23 +123,20 @@ const toast = useToast();
 const results = ref<ProxyProbeResult[]>([]);
 const probing = ref(false);
 const probed = ref(false);
-const memoryNote = ref("");
 let controller: AbortController | null = null;
 // Incremented per probe round so stale rounds cannot write into the latest results.
 let probeRound = 0;
-// Latched once the round's first available probe is written to memory.
-let roundHasAvailable = false;
 
 const proxyEnabled = computed(() => settings.proxyEnabled);
-const rememberedProxy = computed(() => settings.preferredProxy);
+const proxies = computed(() => settings.orderedProxies);
+const isCustomOrder = computed(() => settings.proxyOrder.length > 0);
 
-const fastestProxy = computed(() => {
-  let fastest: ProxyProbeResult | null = null;
-  for (const result of results.value) {
-    if (result.status !== "available") continue;
-    if (!fastest || result.durationMs < fastest.durationMs) fastest = result;
+// The proxy a real download would use: the first available one in priority order.
+const selectedProxy = computed(() => {
+  for (const proxy of proxies.value) {
+    if (resultFor(proxy)?.status === "available") return proxy;
   }
-  return fastest?.proxy ?? null;
+  return null;
 });
 
 function resultFor(proxy: string): ProxyProbeResult | undefined {
@@ -149,11 +163,24 @@ function toggleProxy() {
   settings.setProxyEnabled(!settings.proxyEnabled);
 }
 
-function clearMemory() {
-  settings.setPreferredProxy("");
-  toast.success("已清除代理记忆");
+function move(index: number, delta: number) {
+  const target = index + delta;
+  const next = [...proxies.value];
+  const from = next[index];
+  const to = next[target];
+  if (from === undefined || to === undefined) return;
+  next[index] = to;
+  next[target] = from;
+  settings.setProxyOrder(next);
 }
 
+function resetOrder() {
+  settings.resetProxyOrder();
+  toast.success("已恢复默认优先级");
+  void runProbe();
+}
+
+// Sequential probing mirrors the real download path: same order, same priority.
 async function runProbe() {
   // Supersede any in-flight round before starting a fresh one.
   controller?.abort();
@@ -162,36 +189,24 @@ async function runProbe() {
   controller = current;
   probing.value = true;
   probed.value = false;
-  memoryNote.value = "";
-  roundHasAvailable = false;
   results.value = [];
 
-  const tasks = env.update.downloadProxies.map((proxy) =>
-    probeProxy(proxy, env.links.apkDownloadUrl, { signal: current.signal })
-      .then((result) => {
-        // Append as soon as each probe settles; ignore rounds that were superseded.
-        if (round !== probeRound) return;
-        results.value = [...results.value, result];
-        // All probes start together, so the first "available" to settle is the round's
-        // fastest; later results never overwrite the memory.
-        if (result.status === "available" && !roundHasAvailable) {
-          roundHasAvailable = true;
-          settings.setPreferredProxy(result.proxy);
-        }
-      })
-      .catch(() => {
-        // Canceled probes carry no status; nothing to render.
-      })
-  );
-
   try {
-    await Promise.all(tasks);
+    for (const proxy of proxies.value) {
+      const result = await probeProxy(proxy, env.links.apkDownloadUrl, {
+        signal: current.signal,
+      });
+      // Append as soon as each probe settles; ignore rounds that were superseded.
+      if (round !== probeRound) return;
+      results.value = [...results.value, result];
+    }
+  } catch {
+    // Canceled rounds carry no status; nothing to render.
   } finally {
     if (round === probeRound) {
       controller = null;
       probing.value = false;
       probed.value = true;
-      if (!roundHasAvailable) memoryNote.value = "本轮无可用代理，记忆未更新";
     }
   }
 }

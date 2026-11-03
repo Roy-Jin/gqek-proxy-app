@@ -68,7 +68,7 @@ const modules = [
   },
   {
     label: "下载代理",
-    description: "探测下载加速节点并管理代理记忆",
+    description: "探测下载加速节点并调整代理优先级",
     path: "/about/debug/proxy",
     icon: "pin",
   },

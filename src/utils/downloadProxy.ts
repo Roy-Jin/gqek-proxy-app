@@ -25,10 +25,9 @@ export interface ProbeOptions {
 }
 
 export interface ProxySelectionOptions extends ProbeOptions {
+  /** List order is the priority: ranked by measured download speed, first wins. */
   proxies: readonly string[];
   enabled?: boolean;
-  /** Proxy remembered from the previous download; checked first. */
-  preferredProxy?: string;
 }
 
 export interface DownloadUrlResult {
@@ -218,46 +217,11 @@ export function isProxyInsecure(
   return isMixedContentBlocked(buildProxyUrl(proxy, targetUrl), pageProtocol);
 }
 
-/** Resolve as soon as one probe succeeds and abort the rest; null when none works. */
-function raceFirstAvailable(
-  proxies: readonly string[],
-  targetUrl: string,
-  options: ProbeOptions
-): Promise<ProxyProbeResult | null> {
-  if (proxies.length === 0) return Promise.resolve(null);
-  if (options.signal?.aborted) return Promise.resolve(null);
-
-  const controller = new AbortController();
-  const onAbort = () => controller.abort();
-  options.signal?.addEventListener("abort", onAbort);
-
-  return new Promise<ProxyProbeResult | null>((resolve) => {
-    let remaining = proxies.length;
-    let settled = false;
-
-    const settle = (winner: ProxyProbeResult | null) => {
-      if (settled) return;
-      settled = true;
-      if (winner) controller.abort();
-      resolve(winner);
-    };
-
-    for (const proxy of proxies) {
-      probeProxy(proxy, targetUrl, { ...options, signal: controller.signal })
-        .then((result) => {
-          if (result.status === "available") settle(result);
-          else if (--remaining === 0) settle(null);
-        })
-        .catch(() => {
-          if (--remaining === 0) settle(null);
-        });
-    }
-  }).finally(() => options.signal?.removeEventListener("abort", onAbort));
-}
-
 /**
- * Remembered proxy first (single probe). If it fails, race the remaining eligible
- * proxies and take the fastest. All failures fall back to the original URL.
+ * Probe proxies one by one in list order and take the first available one.
+ * Latency racing is skipped on purpose: a fast ping does not imply a fast
+ * download, so the list order (ranked by measured download speed) decides.
+ * All failures fall back to the original URL.
  */
 export async function resolveDownloadUrl(
   targetUrl: string,
@@ -271,22 +235,18 @@ export async function resolveDownloadUrl(
   const eligible = options.proxies.filter(
     (proxy) => !isProxyInsecure(proxy, targetUrl, pageProtocol)
   );
-  if (eligible.length === 0) return { url: targetUrl, viaProxy: false };
 
-  const preferred = options.preferredProxy;
-  const checked: string[] = [];
-  if (preferred && eligible.includes(preferred)) {
-    const result = await probeProxy(preferred, targetUrl, options);
-    if (result.status === "available") {
-      return { url: result.url, proxy: preferred, viaProxy: true };
+  for (const proxy of eligible) {
+    if (options.signal?.aborted) break;
+    try {
+      const result = await probeProxy(proxy, targetUrl, options);
+      if (result.status === "available") {
+        return { url: result.url, proxy, viaProxy: true };
+      }
+    } catch {
+      // Caller aborted mid-probe; stop and fall back.
+      break;
     }
-    checked.push(preferred);
-  }
-
-  const remaining = eligible.filter((proxy) => !checked.includes(proxy));
-  const winner = await raceFirstAvailable(remaining, targetUrl, options);
-  if (winner) {
-    return { url: winner.url, proxy: winner.proxy, viaProxy: true };
   }
   return { url: targetUrl, viaProxy: false };
 }

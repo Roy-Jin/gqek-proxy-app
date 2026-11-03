@@ -7,8 +7,18 @@ export const useUpdateStore = defineStore("update", {
   state: () => ({
     proxyEnabled: updateConfig.proxyEnabled,
     autoCheckEnabled: true,
-    preferredProxy: "",
+    // Custom proxy priority from the debug page; empty means the env default order.
+    proxyOrder: [] as string[],
   }),
+  getters: {
+    /** Effective probe order: custom order, with newly added defaults appended. */
+    orderedProxies(state): string[] {
+      const defaults = updateConfig.downloadProxies;
+      const custom = state.proxyOrder.filter((proxy) => defaults.includes(proxy));
+      const added = defaults.filter((proxy) => !custom.includes(proxy));
+      return [...custom, ...added];
+    },
+  },
   actions: {
     setProxyEnabled(value: boolean) {
       this.proxyEnabled = value;
@@ -16,8 +26,11 @@ export const useUpdateStore = defineStore("update", {
     setAutoCheckEnabled(value: boolean) {
       this.autoCheckEnabled = value;
     },
-    setPreferredProxy(value: string) {
-      this.preferredProxy = value;
+    setProxyOrder(value: string[]) {
+      this.proxyOrder = value;
+    },
+    resetProxyOrder() {
+      this.proxyOrder = [];
     },
   },
   persist: {
