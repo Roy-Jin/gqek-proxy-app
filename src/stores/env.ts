@@ -6,6 +6,7 @@ import type {
   DeveloperConfig,
   LinksConfig,
   UiConfig,
+  UpdateConfig,
 } from "../config/env.js";
 import {
   aboutConfig,
@@ -14,6 +15,7 @@ import {
   developerConfig,
   linksConfig,
   uiConfig,
+  updateConfig,
 } from "../config/env.js";
 
 export interface EnvState {
@@ -22,6 +24,7 @@ export interface EnvState {
   developer: DeveloperConfig;
   about: AboutConfig;
   links: LinksConfig;
+  update: UpdateConfig;
   ui: UiConfig;
 }
 
@@ -32,6 +35,7 @@ export const useEnvStore = defineStore("env", {
     developer: { ...developerConfig },
     about: { ...aboutConfig },
     links: { ...linksConfig },
+    update: { ...updateConfig },
     ui: { ...uiConfig },
   }),
 });

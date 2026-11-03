@@ -27,6 +27,12 @@ export interface LinksConfig {
   readonly apiBaseUrl: string;
   readonly releaseApiUrl: string;
   readonly apkAssetName: string;
+  readonly apkDownloadUrl: string;
+}
+
+export interface UpdateConfig {
+  readonly proxyEnabled: boolean;
+  readonly downloadProxies: readonly string[];
 }
 
 export interface UiConfig {
@@ -60,6 +66,18 @@ export const linksConfig: LinksConfig = Object.freeze({
   apiBaseUrl: "https://gqhw.jxmediacenter.com/prod-api",
   releaseApiUrl: "https://api.github.com/repos/Roy-Jin/gqek-proxy-app/releases/latest",
   apkAssetName: "gqek-proxy.apk",
+  apkDownloadUrl:
+    "https://github.com/Roy-Jin/gqek-proxy-app/releases/latest/download/gqek-proxy.apk",
+});
+
+export const updateConfig: UpdateConfig = Object.freeze({
+  proxyEnabled: true,
+  downloadProxies: Object.freeze([
+    "https://gh.inkchills.cn/",
+    "https://wget.la/",
+    "https://gh-proxy.com/",
+    "https://ghproxy.net/"
+  ]),
 });
 
 export const uiConfig: UiConfig = Object.freeze({

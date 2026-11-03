@@ -1,5 +1,7 @@
 import { computed, ref } from "vue";
 import { useEnvStore } from "@/stores/env";
+import { useUpdateStore } from "@/stores/update";
+import { resolveDownloadUrl } from "@/utils/downloadProxy";
 import { errorMessage } from "@/utils/error";
 import {
   getNativeVersion,
@@ -8,6 +10,8 @@ import {
   nativeToast,
   waitForBridge,
 } from "@/utils/nativeBridge";
+import { readDismissedVersion, rememberDismissedVersion } from "@/utils/updateDismiss";
+import { compareVersions } from "@/utils/version";
 
 export interface ReleaseInfo {
   version: string;
@@ -20,18 +24,6 @@ export interface ReleaseInfo {
 }
 
 export type UpdateState = "idle" | "checking" | "up-to-date" | "available" | "error";
-
-/** Compare dotted versions ("v1.2.0" vs "1.2"): positive when a is newer. */
-export function compareVersions(a: string, b: string): number {
-  const pa = a.replace(/^v/i, "").split(".");
-  const pb = b.replace(/^v/i, "").split(".");
-  const len = Math.max(pa.length, pb.length);
-  for (let i = 0; i < len; i++) {
-    const diff = (Number(pa[i]) || 0) - (Number(pb[i]) || 0);
-    if (diff !== 0) return diff;
-  }
-  return 0;
-}
 
 interface GithubAsset {
   name: string;
@@ -120,16 +112,40 @@ async function downloadThenInstall(url: string): Promise<"started" | "failed"> {
   return started ? "started" : "failed";
 }
 
+async function openTarget(url: string, apk: boolean, version: string) {
+  if (!isNativeApp()) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    if (apk) link.download = `app_v${version}.apk`;
+    link.click();
+    return;
+  }
+  await downloadThenInstall(url);
+}
+
+// Shared across startup checks, the about page and the global dialog.
+const state = ref<UpdateState>("idle");
+const currentVersion = ref("");
+const release = ref<ReleaseInfo | null>(null);
+const error = ref("");
+const dialogVisible = ref(false);
+const preparing = ref(false);
+
+let prepareController: AbortController | null = null;
+
+const hasUpdate = computed(() => state.value === "available");
+
 export function useAppUpdate() {
   const env = useEnvStore();
-  const state = ref<UpdateState>("idle");
-  const currentVersion = ref("");
-  const release = ref<ReleaseInfo | null>(null);
-  const error = ref("");
+  const settings = useUpdateStore();
 
-  const hasUpdate = computed(() => state.value === "available");
-
-  async function checkForUpdate() {
+  /**
+   * silent=true is the startup check: failures and "up to date" stay invisible,
+   * and a dismissed version does not reopen the dialog.
+   */
+  async function checkForUpdate(options: { silent?: boolean } = {}) {
+    const silent = options.silent ?? false;
     if (state.value === "checking") return;
     state.value = "checking";
     error.value = "";
@@ -142,33 +158,73 @@ export function useAppUpdate() {
         currentVersion.value = "";
         error.value = ready ? "无法获取应用版本" : "无法获取应用版本（当前非原生环境）";
         state.value = "error";
+        dialogVisible.value = !silent;
         return;
       }
       currentVersion.value = version;
       const latest = await fetchLatestRelease(env.links.releaseApiUrl, env.links.apkAssetName);
       release.value = latest;
-      state.value =
-        compareVersions(latest.version, currentVersion.value) > 0 ? "available" : "up-to-date";
+      if (compareVersions(latest.version, currentVersion.value) > 0) {
+        state.value = "available";
+        dialogVisible.value = silent ? readDismissedVersion() !== latest.version : true;
+      } else {
+        state.value = "up-to-date";
+        dialogVisible.value = !silent;
+      }
     } catch (e) {
       error.value = errorMessage(e);
       state.value = "error";
+      dialogVisible.value = !silent;
     }
   }
 
-  /** Hand the fetched release to the browser, which downloads and installs it. */
+  /** Manual entry from the about page: always surface progress and errors. */
+  function openUpdate() {
+    dialogVisible.value = true;
+    void checkForUpdate({ silent: false });
+  }
+
+  /** "稍后" / overlay close. */
+  function dismiss() {
+    prepareController?.abort();
+    if (state.value === "available" && release.value) {
+      rememberDismissedVersion(release.value.version);
+    }
+    dialogVisible.value = false;
+  }
+
+  /** Resolve the download URL through the proxy pipeline, then hand it off. */
   async function downloadAndInstall() {
     const target = release.value;
-    if (!target) return;
-    await waitForBridge();
-    if (!isNativeApp()) {
-      const link = document.createElement("a");
-      link.href = target.apkUrl || target.pageUrl;
-      link.target = "_blank";
-      if (target.apkUrl) link.download = `app_v${target.version}.apk`;
-      link.click();
-      return;
+    if (!target || preparing.value) return;
+
+    preparing.value = true;
+    const controller = new AbortController();
+    prepareController = controller;
+    try {
+      await waitForBridge();
+      let url = target.pageUrl;
+      let apk = false;
+      if (target.apkUrl) {
+        const resolved = await resolveDownloadUrl(target.apkUrl, {
+          proxies: env.update.downloadProxies,
+          enabled: settings.proxyEnabled,
+          preferredProxy: settings.preferredProxy,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        url = resolved.url;
+        apk = true;
+        if (resolved.viaProxy && resolved.proxy) {
+          settings.setPreferredProxy(resolved.proxy);
+        }
+      }
+      if (!url) return;
+      await openTarget(url, apk, target.version);
+    } finally {
+      preparing.value = false;
+      prepareController = null;
     }
-    await downloadThenInstall(target.apkUrl || target.pageUrl);
   }
 
   return {
@@ -177,7 +233,11 @@ export function useAppUpdate() {
     release,
     error,
     hasUpdate,
+    dialogVisible,
+    preparing,
     checkForUpdate,
+    openUpdate,
+    dismiss,
     downloadAndInstall,
   };
 }

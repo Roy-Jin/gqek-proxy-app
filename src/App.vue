@@ -1,5 +1,6 @@
 <template>
   <ToastHost />
+  <UpdateDialog />
 
   <!-- Boot: validating saved token -->
   <div v-if="!authChecked" class="flex-1 flex items-center justify-center">
@@ -58,9 +59,12 @@ import { storeToRefs } from "pinia";
 import { useRoute } from "vue-router";
 import { getInfo } from "@/api";
 import { useAccountSession, toUserBrief } from "@/composables/useAccountSession";
+import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useEnvStore } from "@/stores/env";
 import { useGlobal } from "@/stores/global";
+import { useUpdateStore } from "@/stores/update";
 import LoginPanel from "@/components/auth/LoginPanel.vue";
+import UpdateDialog from "@/components/update/UpdateDialog.vue";
 import AppIcon from "@/components/ui/AppIcon.vue";
 import AppSpinner from "@/components/ui/AppSpinner.vue";
 import ToastHost from "@/components/ui/ToastHost.vue";
@@ -68,6 +72,8 @@ import ToastHost from "@/components/ui/ToastHost.vue";
 const auth = useGlobal();
 const env = useEnvStore();
 const session = useAccountSession();
+const updateSettings = useUpdateStore();
+const { checkForUpdate } = useAppUpdate();
 const { isAuthed, authChecked } = storeToRefs(auth);
 const route = useRoute();
 
@@ -117,6 +123,10 @@ onMounted(() => {
     (e) => e.key === "F12" && !import.meta.env.DEV && e.preventDefault()
   );
   checkAuth();
+  // Startup check only in production builds and only when the user keeps it enabled
+  if (!import.meta.env.DEV && updateSettings.autoCheckEnabled) {
+    void checkForUpdate({ silent: true });
+  }
 });
 </script>
 

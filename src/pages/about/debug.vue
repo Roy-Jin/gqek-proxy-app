@@ -16,6 +16,7 @@
     <DebugHealthCard />
     <DebugApiCard />
     <DebugBridgeCard />
+    <DebugProxyCard />
     <DebugStorageCard />
   </div>
 </template>
@@ -25,6 +26,7 @@ import { useRouter } from "vue-router";
 import DebugAccountCard from "@/components/debug/DebugAccountCard.vue";
 import DebugBridgeCard from "@/components/debug/DebugBridgeCard.vue";
 import DebugHealthCard from "@/components/debug/DebugHealthCard.vue";
+import DebugProxyCard from "@/components/debug/DebugProxyCard.vue";
 import DebugStorageCard from "@/components/debug/DebugStorageCard.vue";
 import DebugApiCard from "@/components/debug/DebugApiCard.vue";
 import DebugLogCard from "@/components/debug/DebugLogCard.vue";

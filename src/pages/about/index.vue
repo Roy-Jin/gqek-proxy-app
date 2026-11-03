@@ -59,6 +59,26 @@
           </span>
           <AppIcon name="chevron-right" class="h-4 w-4 text-gray-400" />
         </button>
+        <div class="flex items-center justify-between gap-3 px-5 py-3.5 text-sm text-gray-700">
+          <span class="flex flex-col">
+            <span>启动自动检查更新</span>
+            <span class="mt-0.5 text-xs text-gray-400">下次启动生效</span>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-label="启动自动检查更新"
+            :aria-checked="autoCheckEnabled"
+            class="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+            :class="autoCheckEnabled ? 'bg-primary' : 'bg-gray-200'"
+            @click="toggleAutoCheck"
+          >
+            <span
+              class="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all"
+              :class="autoCheckEnabled ? 'left-[22px]' : 'left-0.5'"
+            ></span>
+          </button>
+        </div>
         <button
           type="button"
           class="w-full flex items-center justify-between px-5 py-3.5 text-sm text-gray-700 transition-colors hover:bg-gray-100"
@@ -103,57 +123,6 @@
       >
         知道了
       </AppButton>
-    </AppModal>
-
-    <!-- Update check dialog -->
-    <AppModal :open="showUpdate" title="检查更新" @close="showUpdate = false">
-      <p v-if="currentVersion" class="mt-2 text-center text-xs text-gray-400">
-        当前版本 v{{ currentVersion }}
-      </p>
-
-      <!-- Checking -->
-      <div v-if="updateState === 'checking'" class="mt-2 flex items-center justify-center gap-2 py-4">
-        <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-primary"></span>
-        <p class="text-sm text-gray-500">正在检查更新...</p>
-      </div>
-
-      <!-- Error -->
-      <template v-else-if="updateState === 'error'">
-        <p class="mt-2 text-sm text-gray-500 leading-relaxed break-all">{{ updateError }}</p>
-        <AppButton variant="primary" block class="mt-4" @click="checkForUpdate">
-          重试
-        </AppButton>
-      </template>
-
-      <!-- Up to date -->
-      <template v-else-if="updateState === 'up-to-date'">
-        <p class="mt-2 text-sm text-gray-500 leading-relaxed">
-          当前已是最新版本 v{{ currentVersion }}
-        </p>
-        <AppButton variant="secondary" block class="mt-4" @click="checkForUpdate">
-          重新检查
-        </AppButton>
-      </template>
-
-      <!-- New version available -->
-      <template v-else-if="release">
-        <p class="mt-2 text-sm text-gray-500 leading-relaxed">
-          发现新版本 v{{ release.version }}（当前 v{{ currentVersion }}）
-          <template v-if="release.apkSize">，约 {{ formatSize(release.apkSize) }}</template>
-        </p>
-        <div
-          v-if="release.notes"
-          class="mt-2 max-h-32 overflow-auto rounded-lg bg-gray-50 p-3 text-xs text-gray-600 whitespace-pre-wrap"
-        >{{ release.notes }}</div>
-        <AppButton
-          variant="primary"
-          block
-          class="mt-4"
-          @click="downloadAndInstall"
-        >
-          立即下载安装
-        </AppButton>
-      </template>
     </AppModal>
 
     <!-- Account switch dialog -->
@@ -216,6 +185,7 @@ import { useAccountSwitch } from "@/composables/useAccountSwitch";
 import { useDebugUnlock } from "@/composables/useDebugUnlock";
 import { useAccountsStore } from "@/stores/accounts";
 import { useGlobal } from "@/stores/global";
+import { useUpdateStore } from "@/stores/update";
 import { useToast } from "@/composables/useToast";
 import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useEnvStore } from "@/stores/env";
@@ -229,26 +199,19 @@ const env = useEnvStore();
 const router = useRouter();
 const toast = useToast();
 const accounts = useAccountsStore();
+const updateSettings = useUpdateStore();
 const session = useAccountSession();
 const { switchingId, errorMsg: switchError, savedAccounts, switchTo, resetError } = useAccountSwitch();
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);
 const showDevStatement = ref(false);
-const showUpdate = ref(false);
 const showLogoutConfirm = ref(false);
 const loggingOut = ref(false);
 const showAccounts = ref(false);
 
-const {
-  state: updateState,
-  currentVersion,
-  release,
-  error: updateError,
-  hasUpdate,
-  checkForUpdate,
-  downloadAndInstall,
-} = useAppUpdate();
+const { hasUpdate, openUpdate } = useAppUpdate();
+const autoCheckEnabled = computed(() => updateSettings.autoCheckEnabled);
 
 const currentUserId = computed(() => auth.user?.userId || "");
 const userNameLabel = computed(() => auth.user?.userName?.trim() || "未提供");
@@ -307,8 +270,8 @@ function addAccount() {
   session.beginAddAccount();
 }
 
-function formatSize(bytes: number) {
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+function toggleAutoCheck() {
+  updateSettings.setAutoCheckEnabled(!updateSettings.autoCheckEnabled);
 }
 
 async function fetchTeam() {
@@ -326,11 +289,6 @@ async function fetchTeam() {
 
 function goDebug() {
   router.push("/about/debug");
-}
-
-function openUpdate() {
-  showUpdate.value = true;
-  void checkForUpdate();
 }
 
 async function logout() {
@@ -355,7 +313,5 @@ async function logout() {
 onMounted(() => {
   void session.refreshCurrentUser();
   void fetchTeam();
-  // Silent check: only drives the red dot on the "检查更新" entry
-  void checkForUpdate();
 });
 </script>
