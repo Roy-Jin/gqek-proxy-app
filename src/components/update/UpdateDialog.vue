@@ -22,7 +22,7 @@
 
     <!-- Up to date -->
     <template v-else-if="state === 'up-to-date'">
-      <p class="mt-2 text-sm leading-relaxed text-gray-500">
+      <p class="mt-2 text-sm leading-relaxed text-gray-500 text-center">
         当前已是最新版本 v{{ currentVersion }}
       </p>
       <AppButton variant="secondary" block class="mt-4" @click="requestClose">知道了</AppButton>

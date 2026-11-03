@@ -13,12 +13,21 @@
   <!-- Authed: mobile app layout -->
   <div v-else class="flex flex-col flex-1 min-h-0">
     <header
-      class="shrink-0 flex items-center justify-center px-4 bg-white border-b border-gray-100"
+      class="shrink-0 relative flex items-center justify-center px-4 bg-white border-b border-gray-100"
       style="height: calc(3rem + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top)"
     >
-      <div class="flex items-center gap-2">
-        <div class="h-6 w-6 rounded-md bg-primary text-white grid place-items-center text-xs font-bold">{{ env.app.logoText }}</div>
-        <span class="text-sm font-semibold text-gray-900">{{ env.app.name }}</span>
+      <button
+        v-if="isSubpage"
+        type="button"
+        class="absolute left-1 bottom-0 h-12 inline-flex items-center gap-0.5 px-2 text-sm text-gray-500 rounded-lg transition-colors hover:bg-gray-100"
+        @click="back"
+      >
+        <AppIcon name="chevron-right" class="h-4 w-4 rotate-180" />
+        返回
+      </button>
+      <div class="flex items-center gap-2 min-w-0">
+        <div v-if="!isSubpage" class="h-6 w-6 rounded-md bg-primary text-white grid place-items-center text-xs font-bold">{{ env.app.logoText }}</div>
+        <span class="text-sm font-semibold text-gray-900 truncate">{{ headerTitle }}</span>
       </div>
     </header>
 
@@ -56,7 +65,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { getInfo } from "@/api";
 import { useAccountSession, toUserBrief } from "@/composables/useAccountSession";
 import { useAppUpdate } from "@/composables/useAppUpdate";
@@ -77,11 +86,28 @@ const { checkForUpdate } = useAppUpdate();
 const { isAuthed, authChecked } = storeToRefs(auth);
 const route = useRoute();
 
+const router = useRouter();
+
 const isSubpage = computed(() => route.path.split("/").filter(Boolean).length > 1);
+
+const headerTitle = computed(() => {
+  if (!isSubpage.value) return env.app.name;
+  const t = route.meta.title;
+  return typeof t === "string" && t ? t : env.app.name;
+});
+
+function back() {
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    const parent = route.path.slice(0, route.path.lastIndexOf("/")) || "/";
+    router.replace(parent);
+  }
+}
 
 const navItems = [
   { path: "/activity", label: "活动", icon: "flag" },
-  { path: "/todo", label: "代办", icon: "list" },
+  { path: "/todo", label: "待办", icon: "list" },
   { path: "/about", label: "关于", icon: "info" },
 ];
 

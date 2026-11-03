@@ -10,9 +10,9 @@ import { appConfig } from './src/config/env.ts'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    vue(),
-    vueDevTools(),
     VueRouter(),
+    vue(),
+    // vueDevTools(),
     tailwindcss(),
     {
       name: 'inject-app-name',

@@ -73,8 +73,8 @@ export const linksConfig: LinksConfig = Object.freeze({
 export const updateConfig: UpdateConfig = Object.freeze({
   proxyEnabled: true,
   downloadProxies: Object.freeze([
-    "https://gh.inkchills.cn/",
     "https://wget.la/",
+    "https://gh.inkchills.cn/",
     "https://gh-proxy.com/",
     "https://ghproxy.net/"
   ]),

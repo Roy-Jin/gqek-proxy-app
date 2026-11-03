@@ -27,7 +27,7 @@
     </AppButton>
     <pre
       v-if="result"
-      class="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 overflow-auto max-h-60 whitespace-pre-wrap break-all"
+      class="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 overflow-auto whitespace-pre-wrap break-all"
     >{{ result }}</pre>
   </AppCard>
 </template>

@@ -218,19 +218,6 @@ export function isProxyInsecure(
   return isMixedContentBlocked(buildProxyUrl(proxy, targetUrl), pageProtocol);
 }
 
-/** Probe every proxy at the same time; results follow the input priority order. */
-export async function probeProxiesConcurrently(
-  proxies: readonly string[],
-  targetUrl: string,
-  options: ProbeOptions = {}
-): Promise<ProxyProbeResult[]> {
-  const tasks = proxies.map((proxy) =>
-    probeProxy(proxy, targetUrl, options).catch(() => null)
-  );
-  const results = await Promise.all(tasks);
-  return results.filter((result): result is ProxyProbeResult => result !== null);
-}
-
 /** Resolve as soon as one probe succeeds and abort the rest; null when none works. */
 function raceFirstAvailable(
   proxies: readonly string[],

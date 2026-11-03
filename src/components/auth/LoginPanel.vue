@@ -48,9 +48,14 @@
 
         <div v-else class="flex flex-col gap-3">
           <AppInput v-model="manualToken" type="textarea" placeholder="粘贴密钥（无需 Bearer 前缀）" />
-          <AppButton variant="primary" size="lg" block @click="submitToken">
-            使用此密钥进入
-          </AppButton>
+          <div class="flex gap-2">
+            <AppButton variant="secondary" size="lg" class="shrink-0" @click="pasteToken">
+              粘贴
+            </AppButton>
+            <AppButton variant="primary" size="lg" block @click="submitToken">
+              使用此密钥进入
+            </AppButton>
+          </div>
         </div>
 
         <div v-if="errorMsg" class="mt-3 px-3 py-2.5 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600">
@@ -141,6 +146,24 @@ function formatExpiry(ms: number): string {
     minute: "2-digit",
     hour12: false,
   });
+}
+
+async function pasteToken() {
+  if (!navigator.clipboard?.readText) {
+    errorMsg.value = "当前环境不支持读取剪贴板，请手动粘贴";
+    return;
+  }
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text.trim()) {
+      errorMsg.value = "剪贴板为空";
+      return;
+    }
+    manualToken.value = text.trim();
+    errorMsg.value = "";
+  } catch {
+    errorMsg.value = "读取剪贴板失败，请检查浏览器权限后重试";
+  }
 }
 
 function submitToken() {

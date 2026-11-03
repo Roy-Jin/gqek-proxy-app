@@ -34,6 +34,7 @@
           <p v-if="probed">
             本次最快：<span class="text-gray-600">{{ fastestProxy ?? "无" }}</span>
           </p>
+          <p v-if="memoryNote" class="mt-0.5 text-amber-500">{{ memoryNote }}</p>
         </div>
         <div class="flex gap-1.5">
           <AppButton variant="ghost" size="sm" :loading="probing" @click="runProbe">重新检测</AppButton>
@@ -84,7 +85,7 @@ import { useEnvStore } from "@/stores/env";
 import { useUpdateStore } from "@/stores/update";
 import { useToast } from "@/composables/useToast";
 import {
-  probeProxiesConcurrently,
+  probeProxy,
   type ProxyProbeResult,
   type ProxyProbeStatus,
 } from "@/utils/downloadProxy";
@@ -105,7 +106,12 @@ const toast = useToast();
 const results = ref<ProxyProbeResult[]>([]);
 const probing = ref(false);
 const probed = ref(false);
+const memoryNote = ref("");
 let controller: AbortController | null = null;
+// Incremented per probe round so stale rounds cannot write into the latest results.
+let probeRound = 0;
+// Latched once the round's first available probe is written to memory.
+let roundHasAvailable = false;
 
 const proxyEnabled = computed(() => settings.proxyEnabled);
 const rememberedProxy = computed(() => settings.preferredProxy);
@@ -149,21 +155,43 @@ function clearMemory() {
 }
 
 async function runProbe() {
-  if (probing.value) return;
+  // Supersede any in-flight round before starting a fresh one.
+  controller?.abort();
+  const round = ++probeRound;
   const current = new AbortController();
   controller = current;
   probing.value = true;
   probed.value = false;
+  memoryNote.value = "";
+  roundHasAvailable = false;
   results.value = [];
+
+  const tasks = env.update.downloadProxies.map((proxy) =>
+    probeProxy(proxy, env.links.apkDownloadUrl, { signal: current.signal })
+      .then((result) => {
+        // Append as soon as each probe settles; ignore rounds that were superseded.
+        if (round !== probeRound) return;
+        results.value = [...results.value, result];
+        // All probes start together, so the first "available" to settle is the round's
+        // fastest; later results never overwrite the memory.
+        if (result.status === "available" && !roundHasAvailable) {
+          roundHasAvailable = true;
+          settings.setPreferredProxy(result.proxy);
+        }
+      })
+      .catch(() => {
+        // Canceled probes carry no status; nothing to render.
+      })
+  );
+
   try {
-    results.value = await probeProxiesConcurrently(env.update.downloadProxies, env.links.apkDownloadUrl, {
-      signal: current.signal,
-    });
+    await Promise.all(tasks);
   } finally {
-    if (controller === current) {
+    if (round === probeRound) {
       controller = null;
       probing.value = false;
       probed.value = true;
+      if (!roundHasAvailable) memoryNote.value = "本轮无可用代理，记忆未更新";
     }
   }
 }
@@ -171,5 +199,8 @@ async function runProbe() {
 onMounted(() => {
   if (proxyEnabled.value) void runProbe();
 });
-onUnmounted(() => controller?.abort());
+onUnmounted(() => {
+  probeRound++;
+  controller?.abort();
+});
 </script>

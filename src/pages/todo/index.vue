@@ -2,7 +2,7 @@
   <div class="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
     <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
       <div>
-        <h2 class="text-lg font-semibold text-gray-900">我的代办</h2>
+        <h2 class="text-lg font-semibold text-gray-900">我的待办</h2>
         <p class="mt-0.5 text-sm text-gray-500">跟踪需要处理的消息</p>
       </div>
       <AppButton variant="secondary" size="sm" :loading="loading" @click="refresh">
@@ -63,7 +63,7 @@
         </li>
       </ul>
 
-      <AppEmpty v-else-if="!loading" text="暂无代办消息" />
+      <AppEmpty v-else-if="!loading" text="暂无待办消息" />
     </AppCard>
 
     <AppPagination

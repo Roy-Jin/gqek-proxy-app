@@ -45,9 +45,58 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/about/debug': RouteRecordInfo<
+    '/about/debug/': RouteRecordInfo<
+      '/about/debug/',
       '/about/debug',
-      '/about/debug',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/debug/account': RouteRecordInfo<
+      '/about/debug/account',
+      '/about/debug/account',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/debug/bridge': RouteRecordInfo<
+      '/about/debug/bridge',
+      '/about/debug/bridge',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/debug/js': RouteRecordInfo<
+      '/about/debug/js',
+      '/about/debug/js',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/debug/log': RouteRecordInfo<
+      '/about/debug/log',
+      '/about/debug/log',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/debug/network': RouteRecordInfo<
+      '/about/debug/network',
+      '/about/debug/network',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/debug/proxy': RouteRecordInfo<
+      '/about/debug/proxy',
+      '/about/debug/proxy',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/debug/storage': RouteRecordInfo<
+      '/about/debug/storage',
+      '/about/debug/storage',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -102,9 +151,65 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/about/debug.vue': {
+    'src/pages/about/debug/index.vue': {
       routes:
-        | '/about/debug'
+        | '/about/debug/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/debug/account.vue': {
+      routes:
+        | '/about/debug/account'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/debug/bridge.vue': {
+      routes:
+        | '/about/debug/bridge'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/debug/js.vue': {
+      routes:
+        | '/about/debug/js'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/debug/log.vue': {
+      routes:
+        | '/about/debug/log'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/debug/network.vue': {
+      routes:
+        | '/about/debug/network'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/debug/proxy.vue': {
+      routes:
+        | '/about/debug/proxy'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/debug/storage.vue': {
+      routes:
+        | '/about/debug/storage'
       views:
         | never
       pathParamNames:

@@ -26,7 +26,7 @@
     </div>
     <pre
       v-if="bridgeReady && bridgeMethods.length"
-      class="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 overflow-auto max-h-40"
+      class="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 overflow-auto"
     >{{ bridgeMethods.join("\n") }}</pre>
   </AppCard>
 </template>

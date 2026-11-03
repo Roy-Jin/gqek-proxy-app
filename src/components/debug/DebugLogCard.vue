@@ -10,7 +10,7 @@
       </div>
       <AppButton variant="ghost" size="sm" @click="clearLogs">清空</AppButton>
     </div>
-    <div class="max-h-96 overflow-auto">
+    <div>
       <div v-if="!enabled" class="py-10 text-center text-gray-400 text-sm">
         日志记录未开启
       </div>

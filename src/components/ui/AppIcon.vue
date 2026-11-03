@@ -58,6 +58,10 @@ defineProps<{ name: string }>();
     <template v-else-if="name === 'chevron-right'">
       <path d="m9 6 6 6-6 6" />
     </template>
+    <template v-else-if="name === 'code'">
+      <path d="m8 6-6 6 6 6" />
+      <path d="m16 6 6 6-6 6" />
+    </template>
     <template v-else-if="name === 'x'">
       <path d="M18 6 6 18M6 6l12 12" />
     </template>

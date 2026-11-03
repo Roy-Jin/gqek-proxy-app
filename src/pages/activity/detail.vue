@@ -1,17 +1,5 @@
 <template>
   <div class="p-4 sm:p-6 max-w-2xl mx-auto">
-    <div class="flex items-center gap-2 mb-4">
-      <button
-        type="button"
-        class="inline-flex items-center gap-1 px-2 py-1 text-sm text-gray-500 rounded-lg transition-colors hover:bg-gray-100"
-        @click="back"
-      >
-        <AppIcon name="chevron-right" class="h-4 w-4 rotate-180" />
-        返回
-      </button>
-      <h2 class="text-lg font-semibold text-gray-900">活动详情</h2>
-    </div>
-
     <AppSpinner v-if="loading && !detail" />
 
     <AppErrorState v-else-if="errorMsg" :message="errorMsg" @retry="fetchDetail" />
@@ -169,7 +157,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
+import { definePage } from "vue-router/experimental";
 import { getActivityDetail, getVolunteerActivityDetail, signFlagChange, activityStatusLabel } from "@/api";
 import type { ActivityDetail } from "@/api";
 import { useToast } from "@/composables/useToast";
@@ -181,8 +170,9 @@ import AppSpinner from "@/components/ui/AppSpinner.vue";
 import AppErrorState from "@/components/ui/AppErrorState.vue";
 import MemberCountersignModal from "@/components/activity/MemberCountersignModal.vue";
 
+definePage({ meta: { title: "活动详情" } });
+
 const route = useRoute();
-const router = useRouter();
 const toast = useToast();
 
 const type = (route.query.type as string) || "volunteer";
@@ -257,11 +247,6 @@ const classHours = computed(() =>
     .map((c) => c.attendTime)
     .filter((n): n is string => !!n)
 );
-
-function back() {
-  if (window.history.length > 1) router.back();
-  else router.replace("/activity");
-}
 
 async function fetchDetail() {
   if (!id) {
