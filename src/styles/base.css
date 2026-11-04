@@ -151,6 +151,12 @@ img {
     --switch-variant-handle-background: var(--md-outline);
 }
 
+/* Floating action button in inverse surface, so it never blends with primary selection states */
+.fab-inverse .var-fab__trigger {
+    background-color: var(--md-inverse-surface);
+    color: var(--md-surface);
+}
+
 /* Low-end WebView falls back to the reduced motion rules below */
 @media (prefers-reduced-motion: reduce) {
     *,

@@ -10,33 +10,29 @@
     <template v-else-if="detail">
       <!-- Cover -->
       <div class="rounded-2xl overflow-hidden bg-primary-container w-40 sm:w-56 mx-auto">
-        <img
-          v-if="hasCover"
-          :src="cover"
-          :alt="detail.activityName"
-          class="w-full aspect-square object-cover"
-          referrerpolicy="no-referrer"
-          @error="onImgError"
-        />
+        <img v-if="hasCover" :src="cover" :alt="detail.activityName" class="w-full aspect-square object-cover"
+          referrerpolicy="no-referrer" @error="onImgError" />
         <div v-else class="w-full aspect-square grid place-items-center text-on-primary-container">
           <VarIcon name="image-outline" :size="32" class="opacity-60" />
         </div>
       </div>
 
       <!-- Title header -->
-      <div class="bg-surface-low rounded-lg p-4 mt-4">
+      <div class="bg-surface-container rounded-lg p-4 mt-4">
         <div class="flex items-start justify-between gap-3">
           <h3 class="text-base font-semibold text-on-surface">{{ detail.activityName }}</h3>
-          <span class="shrink-0 px-2 py-0.5 text-xs rounded bg-surface-high text-on-surface-variant">{{ activityStatusLabel(detail.status) }}</span>
+          <span class="shrink-0 px-2 py-0.5 text-xs rounded bg-surface-high text-on-surface-variant">{{
+            activityStatusLabel(detail.status) }}</span>
         </div>
         <div class="mt-2 flex items-center gap-2 flex-wrap">
-          <span class="px-2 py-0.5 text-xs rounded-md bg-primary-container text-on-primary-container">{{ detail.activityClassifyName }}</span>
+          <span class="px-2 py-0.5 text-xs rounded-md bg-primary-container text-on-primary-container">{{
+            detail.activityClassifyName }}</span>
           <span v-if="detail.processName" class="text-xs text-on-surface-variant">{{ detail.processName }}</span>
         </div>
       </div>
 
       <!-- Sign in / out -->
-      <div v-if="showSign" class="bg-surface-low rounded-lg p-4 mt-4">
+      <div v-if="showSign" class="bg-surface-container rounded-lg p-4 mt-4">
         <p class="text-sm font-semibold text-on-surface mb-3">签到管理</p>
         <div class="flex items-center justify-between py-2">
           <span class="text-sm text-on-surface">签到</span>
@@ -46,19 +42,16 @@
           <span class="text-sm text-on-surface">签退</span>
           <VarSwitch variant :model-value="detail.signOutFlag === '1'" :disabled="signing" @change="toggleSignOut" />
         </div>
-        <button
-          type="button"
-          v-ripple
+        <button type="button" v-ripple
           class="w-full flex items-center justify-between py-2.5 border-t border-outline-variant text-sm text-on-surface transition-colors"
-          @click="showMembers = true"
-        >
+          @click="showMembers = true">
           <span>成员补签</span>
           <VarIcon name="chevron-right" :size="16" class="text-on-surface-variant" />
         </button>
       </div>
 
       <!-- Basic info -->
-      <div class="bg-surface-low rounded-lg p-4 mt-4">
+      <div class="bg-surface-container rounded-lg p-4 mt-4">
         <p class="text-sm font-semibold text-on-surface mb-3">基本信息</p>
         <dl class="space-y-3 text-sm">
           <div class="flex">
@@ -89,16 +82,20 @@
       </div>
 
       <!-- Time & location -->
-      <div class="bg-surface-low rounded-lg p-4 mt-4">
+      <div class="bg-surface-container rounded-lg p-4 mt-4">
         <p class="text-sm font-semibold text-on-surface mb-3">时间与地点</p>
         <dl class="space-y-3 text-sm">
           <div class="flex">
             <dt class="w-24 shrink-0 text-on-surface-variant">活动时间</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.activityStartTime }} ~ {{ detail.activityEndTime }}</dd>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.activityStartTime }} ~ {{
+              detail.activityEndTime
+              }}</dd>
           </div>
           <div class="flex">
             <dt class="w-24 shrink-0 text-on-surface-variant">报名时间</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.registerStartTime }} ~ {{ detail.registerEndTime }}</dd>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.registerStartTime }} ~ {{
+              detail.registerEndTime
+              }}</dd>
           </div>
           <div class="flex">
             <dt class="w-24 shrink-0 text-on-surface-variant">活动地点</dt>
@@ -108,10 +105,11 @@
       </div>
 
       <!-- Teachers -->
-      <div v-if="teachers.length" class="bg-surface-low rounded-lg p-4 mt-4">
+      <div v-if="teachers.length" class="bg-surface-container rounded-lg p-4 mt-4">
         <p class="text-sm font-semibold text-on-surface mb-3">指导老师</p>
         <ul class="space-y-2">
-          <li v-for="(t, i) in teachers" :key="i" class="text-sm text-on-surface flex items-center justify-between gap-2">
+          <li v-for="(t, i) in teachers" :key="i"
+            class="text-sm text-on-surface flex items-center justify-between gap-2">
             <span>{{ t.name }}</span>
             <span class="text-on-surface-variant text-xs shrink-0">{{ t.detail }}</span>
           </li>
@@ -119,19 +117,16 @@
       </div>
 
       <!-- Class hours -->
-      <div v-if="classHours.length" class="bg-surface-low rounded-lg p-4 mt-4">
+      <div v-if="classHours.length" class="bg-surface-container rounded-lg p-4 mt-4">
         <p class="text-sm font-semibold text-on-surface mb-3">学时明细</p>
         <div class="flex flex-wrap gap-2">
-          <span
-            v-for="(h, i) in classHours"
-            :key="i"
-            class="px-2.5 py-1 text-xs rounded-lg bg-surface-high text-on-surface"
-          >{{ h }} 小时</span>
+          <span v-for="(h, i) in classHours" :key="i"
+            class="px-2.5 py-1 text-xs rounded-lg bg-surface-high text-on-surface">{{ h }} 小时</span>
         </div>
       </div>
 
       <!-- Description -->
-      <div v-if="detail.content || detail.purpose" class="bg-surface-low rounded-lg p-4 mt-4">
+      <div v-if="detail.content || detail.purpose" class="bg-surface-container rounded-lg p-4 mt-4">
         <p class="text-sm font-semibold text-on-surface mb-3">活动说明</p>
         <p class="text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-all">
           {{ detail.content || detail.purpose }}

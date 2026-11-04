@@ -1,12 +1,6 @@
 <template>
-  <VarDialog
-    :show="dialogVisible"
-    :title="dialogTitle"
-    width="86vw"
-    :dialog-style="{ maxWidth: '24rem' }"
-    close-on-click-overlay
-    @update:show="onUpdateShow"
-  >
+  <VarDialog :show="dialogVisible" :title="dialogTitle" width="86vw" :dialog-style="{ maxWidth: '24rem' }"
+    close-on-click-overlay @update:show="onUpdateShow">
     <!-- Checking -->
     <div v-if="state === 'checking'" class="flex items-center justify-center gap-2 py-4">
       <VarLoading type="circle" color="var(--md-primary)" size="small" />
@@ -44,8 +38,8 @@
       <div v-if="release.notes" class="mt-3">
         <p class="mb-1 text-xs text-on-surface-variant">更新说明</p>
         <div
-          class="max-h-40 overflow-auto overscroll-contain rounded-md bg-surface-container p-3 text-xs leading-relaxed text-on-surface-variant whitespace-pre-wrap break-words"
-        >{{ release.notes }}</div>
+          class="max-h-40 overflow-auto overscroll-contain rounded-md bg-surface-container p-3 text-xs leading-relaxed text-on-surface-variant whitespace-pre-wrap wrap-break-word">
+          {{ release.notes }}</div>
       </div>
     </template>
 

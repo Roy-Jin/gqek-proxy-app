@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-low p-4">
+  <section class="mb-4 rounded-lg bg-surface-container p-4">
     <h3 class="mb-3 text-base font-medium text-on-surface">NativeBridge 调试</h3>
     <div class="space-y-1.5 text-sm text-on-surface-variant">
       <p>

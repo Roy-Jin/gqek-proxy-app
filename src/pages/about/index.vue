@@ -6,7 +6,7 @@
     </div>
 
     <!-- Current account & team -->
-    <div class="mb-4 bg-surface-low rounded-lg p-4">
+    <div class="mb-4 bg-surface-container rounded-lg p-4">
       <div v-if="teamLoading" class="flex items-center gap-3">
         <div class="h-14 w-14 rounded-md bg-surface-high animate-pulse shrink-0"></div>
         <div class="space-y-2">
@@ -17,16 +17,10 @@
       </div>
 
       <div v-else class="flex items-center gap-3">
-        <img
-          v-if="team?.teamAvatar"
-          :src="team.teamAvatar"
-          :alt="team.teamName"
-          class="h-14 w-14 rounded-md object-cover shrink-0"
-        />
-        <div
-          v-else
-          class="h-14 w-14 rounded-md bg-primary-container text-on-primary-container grid place-items-center text-lg font-semibold shrink-0"
-        >
+        <img v-if="team?.teamAvatar" :src="team.teamAvatar" :alt="team.teamName"
+          class="h-14 w-14 rounded-md object-cover shrink-0" />
+        <div v-else
+          class="h-14 w-14 rounded-md bg-primary-container text-on-primary-container grid place-items-center text-lg font-semibold shrink-0">
           {{ teamInitial }}
         </div>
         <div class="min-w-0 flex-1">
@@ -39,78 +33,30 @@
       </div>
     </div>
 
-    <!-- Settings group -->
-    <div class="bg-surface-low rounded-lg overflow-hidden divide-y divide-outline-variant">
-      <button
-        type="button"
-        v-ripple
-        class="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
-        @click="openUpdate"
-      >
-        <span class="flex items-center gap-3 min-w-0">
-          <VarIcon name="download-outline" :size="22" class="shrink-0 text-on-surface-variant" />
-          <span class="text-sm text-on-surface">检查更新</span>
-          <span v-if="hasUpdate" class="h-2 w-2 rounded-full bg-error"></span>
-        </span>
-        <VarIcon name="chevron-right" :size="20" class="shrink-0 text-on-surface-variant" />
-      </button>
-
-      <div class="flex items-center justify-between gap-3 px-4 py-3.5">
-        <span class="flex items-center gap-3 min-w-0">
-          <VarIcon name="refresh" :size="22" class="shrink-0 text-on-surface-variant" />
-          <span class="flex flex-col min-w-0">
-            <span class="text-sm text-on-surface">启动自动检查更新</span>
-            <span class="mt-0.5 text-xs text-on-surface-variant">下次启动生效</span>
-          </span>
-        </span>
-        <VarSwitch
-          variant
-          :model-value="autoCheckEnabled"
-          aria-label="启动自动检查更新"
-          @change="toggleAutoCheck"
-        />
-      </div>
-
-      <div class="px-4 py-3.5">
-        <div class="flex items-center gap-3">
-          <VarIcon name="palette-outline" :size="22" class="shrink-0 text-on-surface-variant" />
-          <p class="text-sm text-on-surface">外观</p>
-        </div>
-        <AppSegmented
-          class="mt-3"
-          :items="themeModes"
-          :active="theme.preference.value"
-          block
-          @change="theme.set"
-        />
-      </div>
-
-      <button
-        type="button"
-        v-ripple
-        class="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
-        @click="showDevStatement = true"
-      >
-        <span class="flex items-center gap-3 min-w-0">
-          <VarIcon name="file-document-outline" :size="22" class="shrink-0 text-on-surface-variant" />
-          <span class="text-sm text-on-surface">{{ env.developer.statementTitle }}</span>
-        </span>
-        <VarIcon name="chevron-right" :size="20" class="shrink-0 text-on-surface-variant" />
-      </button>
-
-      <button
-        v-if="debugUnlocked"
-        type="button"
-        v-ripple
-        class="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
-        @click="goDebug"
-      >
-        <span class="flex items-center gap-3 min-w-0">
-          <VarIcon name="code-json" :size="22" class="shrink-0 text-on-surface-variant" />
-          <span class="text-sm text-on-surface">开发者调试</span>
-        </span>
-        <VarIcon name="chevron-right" :size="20" class="shrink-0 text-on-surface-variant" />
-      </button>
+    <!-- Entries: project info & settings -->
+    <div class="overflow-hidden rounded-lg bg-surface-container" :style="cellVars">
+      <VarCell :title="env.developer.statementTitle" icon="file-document-outline" icon-class="text-on-surface-variant"
+        ripple border :border-offset="16" @click="showDevStatement = true">
+        <template #extra>
+          <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+        </template>
+      </VarCell>
+      <VarCell title="设置" icon="cog-outline" icon-class="text-on-surface-variant" ripple border :border-offset="16"
+        @click="goSettings">
+        <template #extra>
+          <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+        </template>
+      </VarCell>
+      <VarCell title="关于项目" icon="information-outline" icon-class="text-on-surface-variant" ripple @click="goProject">
+        <template #extra>
+          <div class="flex items-center gap-2">
+            <span v-if="hasUpdate" class="h-2 w-2 rounded-full bg-error">
+              <span class="sr-only">有新版本</span>
+            </span>
+            <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+          </div>
+        </template>
+      </VarCell>
     </div>
 
     <VarButton class="mt-4" type="danger" block @click="showLogoutConfirm = true">
@@ -118,32 +64,16 @@
     </VarButton>
 
     <!-- Developer statement dialog: hold the confirm button for 5s to unlock the debug entry -->
-    <VarDialog
-      v-model:show="showDevStatement"
-      :title="env.developer.statementTitle"
-      width="86vw"
-      :dialog-style="{ maxWidth: '20rem' }"
-      close-on-click-overlay
-    >
+    <VarDialog v-model:show="showDevStatement" :title="env.developer.statementTitle" width="86vw"
+      :dialog-style="{ maxWidth: '20rem' }" close-on-click-overlay>
       <p class="text-sm text-on-surface-variant leading-relaxed select-none">
         {{ env.developer.statementText }}
       </p>
       <template #actions>
         <div class="w-full px-6 pb-6">
-          <VarButton
-            type="primary"
-            tonal
-            block
-            class="select-none [-webkit-touch-callout:none]"
-            @click="onConfirmStatement"
-            @touchstart="startPress"
-            @touchend="cancelPress"
-            @touchcancel="cancelPress"
-            @mousedown="startPress"
-            @mouseup="cancelPress"
-            @mouseleave="cancelPress"
-            @contextmenu.prevent
-          >
+          <VarButton type="primary" tonal block class="select-none [-webkit-touch-callout:none]"
+            @click="onConfirmStatement" @touchstart="startPress" @touchend="cancelPress" @touchcancel="cancelPress"
+            @mousedown="startPress" @mouseup="cancelPress" @mouseleave="cancelPress" @contextmenu.prevent>
             知道了
           </VarButton>
         </div>
@@ -151,38 +81,21 @@
     </VarDialog>
 
     <!-- Account switch dialog -->
-    <VarDialog
-      :show="showAccounts"
-      title="切换账号"
-      width="86vw"
-      :dialog-style="{ maxWidth: '20rem' }"
-      close-on-click-overlay
-      @update:show="onAccountsUpdateShow"
-    >
+    <VarDialog :show="showAccounts" title="切换账号" width="86vw" :dialog-style="{ maxWidth: '20rem' }"
+      close-on-click-overlay @update:show="onAccountsUpdateShow">
       <div v-if="savedAccounts.length" class="max-h-64 space-y-2 overflow-auto">
-        <div
-          v-for="account in savedAccounts"
-          :key="account.userId"
+        <div v-for="account in savedAccounts" :key="account.userId"
           v-ripple="{ disabled: account.userId === currentUserId }"
-          class="flex items-center gap-2 rounded-md border p-3"
-          :class="account.userId === currentUserId
+          class="flex items-center gap-2 rounded-md border p-3" :class="account.userId === currentUserId
             ? 'border-primary bg-primary-container'
-            : 'border-outline-variant cursor-pointer'"
-          @click="onAccountClick(account.userId)"
-        >
+            : 'border-outline-variant cursor-pointer'" @click="onAccountClick(account.userId)">
           <div class="min-w-0 flex-1">
             <p class="text-sm font-medium text-on-surface truncate">{{ account.userName || "未提供" }}</p>
             <p class="mt-0.5 text-xs text-on-surface-variant truncate">ID：{{ account.userId || "未提供" }}</p>
           </div>
           <span v-if="account.userId === currentUserId" class="shrink-0 text-[11px] text-primary">当前</span>
-          <VarButton
-            v-else
-            text
-            type="primary"
-            size="small"
-            :disabled="!!switchingId"
-            @click.stop="removeAccount(account.userId)"
-          >
+          <VarButton v-else text type="primary" size="small" :disabled="!!switchingId"
+            @click.stop="removeAccount(account.userId)">
             移除
           </VarButton>
         </div>
@@ -199,14 +112,8 @@
     </VarDialog>
 
     <!-- Logout confirmation dialog -->
-    <VarDialog
-      v-model:show="showLogoutConfirm"
-      title="退出登录"
-      message-align="center"
-      width="86vw"
-      :dialog-style="{ maxWidth: '20rem' }"
-      close-on-click-overlay
-    >
+    <VarDialog v-model:show="showLogoutConfirm" title="退出登录" message-align="center" width="86vw"
+      :dialog-style="{ maxWidth: '20rem' }" close-on-click-overlay>
       <p class="text-sm text-on-surface-variant">确定要退出当前账号吗？</p>
       <template #actions>
         <div class="flex w-full gap-2 px-6 pb-6">
@@ -227,25 +134,21 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import {
   Button as VarButton,
+  Cell as VarCell,
   Dialog,
   Icon as VarIcon,
   Ripple as vRipple,
-  Switch as VarSwitch,
 } from "@varlet/ui";
 import { listTeam, logout as logoutApi } from "@/api";
 import type { TeamInfo } from "@/api";
 import { useAccountSession } from "@/composables/useAccountSession";
 import { useAccountSwitch } from "@/composables/useAccountSwitch";
+import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useDebugUnlock } from "@/composables/useDebugUnlock";
 import { useAccountsStore } from "@/stores/accounts";
-import { useGlobal } from "@/stores/global";
-import { useUpdateStore } from "@/stores/update";
-import { useToast } from "@/composables/useToast";
-import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useEnvStore } from "@/stores/env";
-import { useThemePreference } from "@/theme";
-import type { ThemePreference } from "@/theme/tokens";
-import AppSegmented from "@/components/ui/AppSegmented.vue";
+import { useGlobal } from "@/stores/global";
+import { useToast } from "@/composables/useToast";
 
 // `Dialog` is Varlet's imperative API; the render component lives on `.Component`
 const VarDialog = Dialog.Component;
@@ -255,26 +158,26 @@ const env = useEnvStore();
 const router = useRouter();
 const toast = useToast();
 const accounts = useAccountsStore();
-const updateSettings = useUpdateStore();
 const session = useAccountSession();
 const { switchingId, errorMsg: switchError, savedAccounts, switchTo, resetError } = useAccountSwitch();
-const theme = useThemePreference();
+const { hasUpdate } = useAppUpdate();
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);
-const showDevStatement = ref(false);
 const showLogoutConfirm = ref(false);
 const loggingOut = ref(false);
 const showAccounts = ref(false);
+const showDevStatement = ref(false);
 
-const { hasUpdate, openUpdate } = useAppUpdate();
-const autoCheckEnabled = computed(() => updateSettings.autoCheckEnabled);
-
-const themeModes: { label: string; value: ThemePreference }[] = [
-  { label: "跟随系统", value: "system" },
-  { label: "浅色", value: "light" },
-  { label: "深色", value: "dark" },
-];
+// Keep Varlet Cell typography/colors aligned with the app's Material tokens
+const cellVars = {
+  "--cell-color": "var(--md-on-surface)",
+  "--cell-description-color": "var(--md-on-surface-variant)",
+  "--cell-font-size": "14px",
+  "--cell-padding": "14px 16px",
+  "--cell-border-color": "var(--md-outline-variant)",
+  "--cell-icon-right": "12px",
+};
 
 const currentUserId = computed(() => auth.user?.userId || "");
 const userNameLabel = computed(() => auth.user?.userName?.trim() || "未提供");
@@ -282,7 +185,7 @@ const schoolLabel = computed(() => auth.user?.schoolName?.trim() || "未提供")
 const teamLabel = computed(
   () => team.value?.teamName?.trim() || auth.user?.orgName?.trim() || "未提供"
 );
-const teamInitial = computed(() => (team.value?.teamName ?? "").charAt(0).toUpperCase() || "团");
+const teamInitial = computed(() => (team.value?.teamName ?? "").charAt(0).toUpperCase() || "LOGO");
 
 const { unlocked: debugUnlocked, startPress, cancelPress, shouldBlockClick } = useDebugUnlock();
 
@@ -295,13 +198,21 @@ function onConfirmStatement() {
 watch(debugUnlocked, (value) => {
   if (!value) return;
   showDevStatement.value = false;
-  toast.success("开发者调试已解锁");
+  toast.success("开发者调试已解锁，可在设置中进入");
 });
 
 // Closing the statement dialog must abort a pending hold
 watch(showDevStatement, (open) => {
   if (!open) cancelPress();
 });
+
+function goProject() {
+  router.push("/about/project");
+}
+
+function goSettings() {
+  router.push("/about/settings");
+}
 
 function openAccounts() {
   resetError();
@@ -338,10 +249,6 @@ function addAccount() {
   session.beginAddAccount();
 }
 
-function toggleAutoCheck() {
-  updateSettings.setAutoCheckEnabled(!updateSettings.autoCheckEnabled);
-}
-
 async function fetchTeam() {
   teamLoading.value = true;
   try {
@@ -353,10 +260,6 @@ async function fetchTeam() {
   } finally {
     teamLoading.value = false;
   }
-}
-
-function goDebug() {
-  router.push("/about/debug");
 }
 
 async function logout() {

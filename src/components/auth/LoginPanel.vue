@@ -9,7 +9,7 @@
         <h1 class="mt-3 text-[22px] leading-7 font-medium text-on-surface">{{ env.app.name }}</h1>
       </div>
 
-      <div class="rounded-xl bg-surface-low p-5 sm:p-6">
+      <div class="rounded-xl bg-surface-container p-5 sm:p-6">
         <AppSegmented :items="loginModes" :active="mode" block @change="setMode" />
 
         <form v-if="mode === 'account'" class="mt-4 flex flex-col gap-3" @submit.prevent="submit">

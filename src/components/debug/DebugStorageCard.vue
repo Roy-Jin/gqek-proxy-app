@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-low p-4">
+  <section class="mb-4 rounded-lg bg-surface-container p-4">
     <div class="mb-3 flex items-center justify-between">
       <h3 class="text-base font-medium text-on-surface">本地存储</h3>
       <VarButton text size="small" @click="refresh">刷新</VarButton>

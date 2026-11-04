@@ -7,7 +7,7 @@
     @update:show="onUpdateShow"
     @close="emit('close')"
   >
-    <div class="flex h-[88vh] w-full flex-col overflow-hidden rounded-t-xl bg-surface-low sm:mx-auto sm:max-w-lg sm:rounded-xl">
+    <div class="flex h-[88vh] w-full flex-col overflow-hidden rounded-t-xl bg-surface-container sm:mx-auto sm:max-w-lg sm:rounded-xl">
       <!-- Header -->
       <div class="flex items-center justify-between gap-3 border-b border-outline-variant px-4 py-3 sm:px-5">
         <p class="text-base font-semibold text-on-surface">成员补签</p>
@@ -30,7 +30,7 @@
           v-model="signFlag"
           variant="outlined"
           size="small"  
-          placeholder="全部"
+          placeholder="未筛选"
           :options="signFlagOptions"
           :hint="false"
           class="w-28 shrink-0"
@@ -144,11 +144,11 @@ const signFlag = ref("");
 const countersigning = ref(false);
 
 const signFlagOptions = [
-  { label: "全部", value: "" },
-  { label: "签到签退", value: "3" },
-  { label: "签到", value: "1" },
-  { label: "签退", value: "2" },
-  { label: "暂无", value: "0" },
+  { label: "未筛选", value: "" },
+  { label: "已完成", value: "3" },
+  { label: "仅签到", value: "1" },
+  { label: "仅签退", value: "2" },
+  { label: "未打卡", value: "0" },
 ];
 
 const { selectedIds, allSelected, toggle: toggleSelect, toggleAll: toggleSelectAll, clear: clearSelection } =

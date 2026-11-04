@@ -134,7 +134,11 @@ const preparing = ref(false);
 
 let prepareController: AbortController | null = null;
 
-const hasUpdate = computed(() => state.value === "available");
+const hasUpdate = computed(() => {
+  const latest = release.value;
+  if (!latest || !currentVersion.value) return false;
+  return compareVersions(latest.version, currentVersion.value) > 0;
+});
 
 export function useAppUpdate() {
   const env = useEnvStore();
@@ -143,13 +147,16 @@ export function useAppUpdate() {
   /**
    * silent=true is the startup check: failures and "up to date" stay invisible,
    * and a dismissed version does not reopen the dialog.
+   * quiet=true is used when auto check is off: the check still runs at startup
+   * but never opens the dialog, and keeps the last release so the badge is stable.
    */
-  async function checkForUpdate(options: { silent?: boolean } = {}) {
+  async function checkForUpdate(options: { silent?: boolean; quiet?: boolean } = {}) {
     const silent = options.silent ?? false;
+    const quiet = options.quiet ?? false;
     if (state.value === "checking") return;
     state.value = "checking";
     error.value = "";
-    release.value = null;
+    if (!quiet) release.value = null;
     try {
       // Injection may lag behind app boot; wait briefly before reading the version
       const ready = await waitForBridge();
@@ -158,7 +165,7 @@ export function useAppUpdate() {
         currentVersion.value = "";
         error.value = ready ? "无法获取应用版本" : "无法获取应用版本（当前非原生环境）";
         state.value = "error";
-        dialogVisible.value = !silent;
+        if (!quiet) dialogVisible.value = !silent;
         return;
       }
       currentVersion.value = version;
@@ -166,15 +173,15 @@ export function useAppUpdate() {
       release.value = latest;
       if (compareVersions(latest.version, currentVersion.value) > 0) {
         state.value = "available";
-        dialogVisible.value = silent ? readDismissedVersion() !== latest.version : true;
+        if (!quiet) dialogVisible.value = silent ? readDismissedVersion() !== latest.version : true;
       } else {
         state.value = "up-to-date";
-        dialogVisible.value = !silent;
+        if (!quiet) dialogVisible.value = !silent;
       }
     } catch (e) {
       error.value = errorMessage(e);
       state.value = "error";
-      dialogVisible.value = !silent;
+      if (!quiet) dialogVisible.value = !silent;
     }
   }
 

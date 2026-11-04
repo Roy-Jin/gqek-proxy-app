@@ -127,6 +127,7 @@ const semantics: VarMap = {
   "--md-surface-container": "var(--color-surface-container)",
   "--md-surface-high": "var(--color-surface-container-high)",
   "--md-surface-highest": "var(--color-surface-container-highest)",
+  "--md-inverse-surface": "var(--color-inverse-surface)",
 
   "--md-on-surface": "var(--color-text)",
   "--md-on-surface-variant": "var(--color-on-surface-variant)",

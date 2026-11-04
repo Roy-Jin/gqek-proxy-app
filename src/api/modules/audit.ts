@@ -17,6 +17,6 @@ export type AuditResult = ApiResult;
  * Approve / reject audit items
  * POST /audit/auditInfo/audit
  */
-export function auditInfo(params: AuditParams, opts?: RequestOptions) {
+export async function auditInfo(params: AuditParams, opts?: RequestOptions) {
   return http.post<AuditResult>("/audit/auditInfo/audit", params, opts);
 }

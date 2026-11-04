@@ -43,6 +43,6 @@ export type TodoListResult = PagedResult<TodoMessage>;
  * Get my todo message list
  * GET /message/message/todolistApp
  */
-export function listTodoApp(params: TodoListParams, opts?: RequestOptions) {
+export async function listTodoApp(params: TodoListParams, opts?: RequestOptions) {
   return http.get<TodoListResult>("/message/message/todolistApp", params, opts);
 }

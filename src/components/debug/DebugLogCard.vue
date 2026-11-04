@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-low p-4">
+  <section class="mb-4 rounded-lg bg-surface-container p-4">
     <div class="mb-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-3">
         <h3 class="text-base font-medium text-on-surface">日志</h3>

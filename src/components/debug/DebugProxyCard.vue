@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-low p-4">
+  <section class="mb-4 rounded-lg bg-surface-container p-4">
     <div class="mb-3 flex items-start justify-between gap-3">
       <div>
         <h3 class="text-base font-medium text-on-surface">下载加速代理</h3>

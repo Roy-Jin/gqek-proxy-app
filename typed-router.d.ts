@@ -101,6 +101,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/about/project': RouteRecordInfo<
+      '/about/project',
+      '/about/project',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/about/settings': RouteRecordInfo<
+      '/about/settings',
+      '/about/settings',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/activity/': RouteRecordInfo<
       '/activity/',
       '/activity',
@@ -210,6 +224,22 @@ declare module 'vue-router/auto-routes' {
     'src/pages/about/debug/storage.vue': {
       routes:
         | '/about/debug/storage'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/project.vue': {
+      routes:
+        | '/about/project'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/about/settings.vue': {
+      routes:
+        | '/about/settings'
       views:
         | never
       pathParamNames:

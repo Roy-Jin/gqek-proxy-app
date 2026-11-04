@@ -16,11 +16,7 @@
 
     <!-- Loading skeleton (first load) -->
     <div v-if="loading && rows.length === 0" class="mt-3 space-y-3">
-      <div
-        v-for="i in 5"
-        :key="i"
-        class="flex items-center gap-3 p-3 rounded-lg bg-surface-low animate-pulse"
-      >
+      <div v-for="i in 5" :key="i" class="flex items-center gap-3 p-3 rounded-lg bg-surface-container animate-pulse">
         <div class="w-20 h-20 rounded-md bg-surface-high shrink-0"></div>
         <div class="flex-1 space-y-2">
           <div class="h-4 rounded bg-surface-high w-3/4"></div>
@@ -33,102 +29,87 @@
     <!-- Error state (first load) -->
     <AppErrorState v-else-if="errorMsg && rows.length === 0" class="mt-3" :message="errorMsg" @retry="refresh" />
 
-    <!-- Empty state -->
-    <div v-else-if="rows.length === 0" class="mt-3 rounded-lg bg-surface-low">
-      <AppEmpty text="暂无本组织活动记录" />
-    </div>
-
-    <!-- Activity list -->
-    <div v-else class="mt-3 space-y-3">
-      <VarCard
-        v-for="item in rows"
-        :key="item.activityId"
-        ripple
-        :elevation="0"
-        style="background: var(--md-surface-low); border-radius: 16px"
-        @click="openDetail(item)"
-      >
-        <div class="flex items-center gap-3 p-3">
-          <div class="flex flex-col items-center gap-1.5 shrink-0 w-20">
-            <div class="w-full aspect-square rounded-md overflow-hidden bg-surface-high">
-              <img
-                v-if="item.activityAvatarUrl"
-                :src="item.activityAvatarUrl"
-                :alt="item.activityName"
-                class="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div v-else class="w-full h-full grid place-items-center text-on-surface-variant">
-                <VarIcon name="file-document-outline" :size="24" />
+    <!-- Activity list: VarList pulls the next batch when the detector reaches the end -->
+    <VarList v-else v-model:loading="loadingMore" :finished="noMore" :error="!!errorMsg" loading-text="加载中..."
+      :offset="80" class="mt-3" @load="loadMore">
+      <div class="space-y-3">
+        <VarCard v-for="item in rows" :key="item.activityId" ripple :elevation="0"
+          style="background: var(--md-surface-container); border-radius: 16px" @click="openDetail(item)">
+          <div class="flex items-center gap-3">
+            <div class="flex flex-col items-center gap-1.5 shrink-0 w-20">
+              <div class="w-full aspect-square rounded-md overflow-hidden bg-surface-high">
+                <img v-if="item.activityAvatarUrl" :src="item.activityAvatarUrl" :alt="item.activityName"
+                  class="w-full h-full object-cover" loading="lazy" />
+                <div v-else class="w-full h-full grid place-items-center text-on-surface-variant">
+                  <VarIcon name="file-document-outline" :size="24" />
+                </div>
               </div>
-            </div>
-            <span class="rounded-full bg-surface-high px-2.5 py-1 text-[11px] text-on-surface-variant whitespace-nowrap">
-              {{ activityStatusLabel(item.status) }}
-            </span>
-          </div>
-
-          <div class="flex-1 min-w-0 flex flex-col">
-            <h3 class="text-[15px] font-semibold text-on-surface truncate">{{ item.activityName }}</h3>
-            <p class="mt-1 text-xs text-on-surface-variant truncate">{{ item.maintainerName }}</p>
-            <span
-              class="mt-1.5 inline-flex w-fit items-center rounded-sm bg-primary-container px-2 py-0.5 text-xs font-medium text-on-primary-container"
-            >
-              {{ item.activityClassifyName }}
-            </span>
-
-            <div class="mt-auto pt-2 space-y-1 text-xs text-on-surface-variant">
-              <div class="flex items-center gap-1">
-                <VarIcon name="calendar-month-outline" :size="14" class="shrink-0" />
-                <span class="truncate">{{ item.activityStartTime }} ~ {{ item.activityEndTime }}</span>
-              </div>
-              <div class="flex items-center gap-1">
-                <VarIcon name="map-marker-outline" :size="14" class="shrink-0" />
-                <span class="truncate">{{ item.activityLocation || '待定' }}</span>
-              </div>
-            </div>
-
-            <div class="mt-2 flex items-center gap-3 text-xs text-on-surface-variant">
-              <span class="inline-flex items-center gap-1">
-                <VarIcon name="account-circle-outline" :size="14" />
-                {{ item.memberNum }} 人
-              </span>
-              <span class="inline-flex items-center gap-1">
-                <VarIcon name="history" :size="14" />
-                {{ item.duration || '—' }} 小时
+              <span
+                class="rounded-full bg-surface-high px-2.5 py-1 text-[11px] text-on-surface-variant whitespace-nowrap">
+                {{ activityStatusLabel(item.status) }}
               </span>
             </div>
+
+            <div class="flex-1 min-w-0 flex flex-col">
+              <h3 class="text-[15px] font-semibold text-on-surface truncate">{{ item.activityName }}</h3>
+              <p class="mt-1 text-xs text-on-surface-variant truncate">{{ item.maintainerName }}</p>
+              <span
+                class="mt-1.5 inline-flex w-fit items-center rounded-sm bg-primary-container px-2 py-0.5 text-xs font-medium text-on-primary-container">
+                {{ item.activityClassifyName }}
+              </span>
+
+              <div class="mt-auto pt-2 space-y-1 text-xs text-on-surface-variant">
+                <div class="flex items-center gap-1">
+                  <VarIcon name="calendar-month-outline" :size="14" class="shrink-0" />
+                  <span class="truncate">{{ item.activityStartTime }}</span>
+                </div>
+              </div>
+
+              <div class="mt-2 flex items-center gap-3 text-xs text-on-surface-variant">
+                <span class="inline-flex items-center gap-1">
+                  <VarIcon name="history" :size="14" />
+                  {{ item.duration || '—' }} 小时
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <VarIcon name="account-circle-outline" :size="14" />
+                  {{ item.memberNum }} 人
+                </span>
+              </div>
+            </div>
           </div>
+        </VarCard>
+      </div>
+
+      <template #finished>
+        <div v-if="rows.length === 0" class="rounded-lg bg-surface-container">
+          <AppEmpty text="暂无本组织活动记录" />
         </div>
-      </VarCard>
-    </div>
+        <p v-else class="py-4 text-center text-sm text-on-surface-variant">数据都被你榨干了…</p>
+      </template>
 
-    <!-- Pager: next page appends the next batch; going back is a no-op -->
-    <div
-      v-if="!loading && !(errorMsg && rows.length === 0) && (!noMore || rows.length > 0)"
-      class="flex justify-center py-4"
-    >
-      <VarPagination
-        :current="loadedPages"
-        :size="PAGE_SIZE"
-        :total="pagerTotal"
-        simple
-        :disabled="loadingMore"
-        @change="onPageChange"
-      />
-    </div>
+      <template #error>
+        <p class="py-4 text-center text-sm text-error">{{ errorMsg }}</p>
+      </template>
+    </VarList>
 
-    <p v-if="errorMsg && rows.length !== 0" class="mt-4 text-sm text-error">{{ errorMsg }}</p>
+    <!-- TODO: wire activity actions (create activity, etc.) into this fab later -->
+    <VarFab class="fab-inverse" :bottom="84" :right="16" inactive-icon="plus" :inactive-icon-size="24" />
+
+    <!-- Scroll target is the app shell's <main>, not the window -->
+    <VarBackTop target="main" :visibility-height="320" :right="16" :bottom="152" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
+  BackTop as VarBackTop,
   Button as VarButton,
+  Fab as VarFab,
   Card as VarCard,
   Icon as VarIcon,
-  Pagination as VarPagination,
+  List as VarList,
 } from "@varlet/ui";
 import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel } from "@/api";
 import type { ActivityInfo, VolunteerActivityInfo } from "@/api";
@@ -179,11 +160,6 @@ const loading = ref(false);
 const loadingMore = ref(false);
 const noMore = ref(false);
 const errorMsg = ref("");
-
-/** Batches pulled so far; drives the simple pager. */
-const loadedPages = ref(0);
-/** Advertise one extra page until the server reports exhaustion. */
-const pagerTotal = computed(() => (noMore.value ? loadedPages.value : loadedPages.value + 1) * PAGE_SIZE);
 
 let serverPage = 1;
 let orgMaintainerIds = new Set<string>();
@@ -249,16 +225,16 @@ async function requestType1(tab: ActivityTab, page: number) {
   return (
     tab === "volunteer"
       ? await listMyVolunteerActivityByStudent({
-          pageSize: PAGE_SIZE,
-          pageNum: page,
-          type: 1,
-          userId: auth.user?.userId ?? "",
-        })
+        pageSize: PAGE_SIZE,
+        pageNum: page,
+        type: 1,
+        userId: auth.user?.userId ?? "",
+      })
       : await listMyActivityByStudent({
-          pageSize: PAGE_SIZE,
-          pageNum: page,
-          type: 1,
-        })
+        pageSize: PAGE_SIZE,
+        pageNum: page,
+        type: 1,
+      })
   ).data;
 }
 
@@ -275,7 +251,6 @@ async function fetchBatch(tab: ActivityTab, seq: number) {
     if (seq !== requestSeq) return false;
     if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
     serverPage++;
-    loadedPages.value++;
     if (body.rows.length < PAGE_SIZE) noMore.value = true;
     collected.push(...body.rows);
     return true;
@@ -306,7 +281,6 @@ async function initTab() {
   errorMsg.value = "";
   noMore.value = false;
   serverPage = 1;
-  loadedPages.value = 0;
   orgMaintainerIds = new Set();
   seenIds = new Set();
   rows.value = [];
@@ -316,15 +290,22 @@ async function initTab() {
     if (seq !== requestSeq) return;
     errorMsg.value = errorMessage(e);
   } finally {
-    if (seq === requestSeq) loading.value = false;
+    if (seq === requestSeq) {
+      loading.value = false;
+      loadingMore.value = false;
+    }
   }
 }
 
 async function loadMore() {
-  if (loading.value || loadingMore.value || noMore.value) return;
+  // First page still loading: keep VarList paused; initTab clears the flag when done.
+  if (loading.value) return;
+  if (noMore.value) {
+    loadingMore.value = false;
+    return;
+  }
   const seq = requestSeq;
   const tab = activeTab.value;
-  loadingMore.value = true;
   try {
     await fetchBatch(tab, seq);
   } catch (e) {
@@ -333,10 +314,6 @@ async function loadMore() {
   } finally {
     if (seq === requestSeq) loadingMore.value = false;
   }
-}
-
-function onPageChange(page: number) {
-  if (page > loadedPages.value) loadMore();
 }
 
 function switchTab(v: ActivityTab) {

@@ -15,6 +15,7 @@
     <VarAppBar
       class="app-bar"
       type="surface"
+      round
       :title-position="isSubpage ? 'left' : 'center'"
       :title="headerTitle"
       :fixed="false"
@@ -34,7 +35,6 @@
         >
           <VarIcon name="arrow-left" :size="22" />
         </VarButton>
-        <div v-else class="app-bar__logo">{{ env.app.logoText }}</div>
       </template>
     </VarAppBar>
 
@@ -90,6 +90,7 @@ import { useGlobal } from "@/stores/global";
 import { useUpdateStore } from "@/stores/update";
 import LoginPanel from "@/components/auth/LoginPanel.vue";
 import UpdateDialog from "@/components/update/UpdateDialog.vue";
+import { DEBUG_UNLOCK_FLAG } from "./composables/useDebugUnlock";
 
 const auth = useGlobal();
 const env = useEnvStore();
@@ -161,16 +162,13 @@ async function checkAuth() {
 }
 
 onMounted(() => {
-  document.oncontextmenu = () => false;
-  document.addEventListener(
-    "keydown",
-    (e) => e.key === "F12" && !import.meta.env.DEV && e.preventDefault()
-  );
   checkAuth();
-  // Startup check only in production builds and only when the user keeps it enabled
-  if (!import.meta.env.DEV && updateSettings.autoCheckEnabled) {
-    void checkForUpdate({ silent: true });
+  // Always check at startup; with auto check off the dialog stays closed and only
+  // the update badge on the about page is refreshed
+  if (!import.meta.env.DEV) {
+    void checkForUpdate({ silent: true, quiet: !updateSettings.autoCheckEnabled });
   }
+  import.meta.env.DEV && sessionStorage.setItem(DEBUG_UNLOCK_FLAG, "1");
 });
 </script>
 
@@ -180,18 +178,6 @@ onMounted(() => {
   --app-bar-surface-text-color: var(--md-on-surface);
   --app-bar-title-font-size: 20px;
   --app-bar-title-font-weight: 500;
-}
-
-.app-bar__logo {
-  height: 1.5rem;
-  width: 1.5rem;
-  border-radius: 0.5rem;
-  background: var(--md-primary);
-  color: var(--md-on-primary);
-  display: grid;
-  place-items: center;
-  font-size: 0.75rem;
-  font-weight: 700;
 }
 
 .app-nav {

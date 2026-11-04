@@ -5,7 +5,7 @@
       <p class="mt-1 text-sm text-on-surface-variant">诊断工具与调试入口</p>
     </div>
 
-    <div class="divide-y divide-outline-variant overflow-hidden rounded-lg bg-surface-low">
+    <div class="divide-y divide-outline-variant overflow-hidden rounded-lg bg-surface-container">
       <button
         v-for="item in modules"
         :key="item.path"

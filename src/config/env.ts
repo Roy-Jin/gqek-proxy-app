@@ -21,10 +21,12 @@ export interface DeveloperConfig {
 
 export interface AboutConfig {
   readonly subtitle: string;
+  readonly description: string;
 }
 
 export interface LinksConfig {
   readonly apiBaseUrl: string;
+  readonly repoUrl: string;
   readonly releaseApiUrl: string;
   readonly apkAssetName: string;
   readonly apkDownloadUrl: string;
@@ -43,7 +45,7 @@ export interface UiConfig {
 
 export const appConfig: AppConfig = Object.freeze({
   name: "赣青二课代理平台",
-  logoText: "赣",
+  logoText: "青",
 });
 
 export const authConfig: AuthConfig = Object.freeze({
@@ -60,10 +62,12 @@ export const developerConfig: DeveloperConfig = Object.freeze({
 
 export const aboutConfig: AboutConfig = Object.freeze({
   subtitle: "应用信息与账号管理",
+  description: "面向组织（团队）负责人的赣青二课辅助工具，用于管理活动、处理待办与快速切换账号等。",
 });
 
 export const linksConfig: LinksConfig = Object.freeze({
   apiBaseUrl: "https://gqhw.jxmediacenter.com/prod-api",
+  repoUrl: "https://github.com/Roy-Jin/gqek-proxy-app",
   releaseApiUrl: "https://api.github.com/repos/Roy-Jin/gqek-proxy-app/releases/latest",
   apkAssetName: "gqek-proxy.apk",
   apkDownloadUrl:
