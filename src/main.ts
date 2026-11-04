@@ -5,7 +5,6 @@ import { createRouter, createWebHistory } from "vue-router";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 
 import App from "./App.vue";
-import "@varlet/icons";
 import "@varlet/ui/es/varlet.css";
 import "./styles/base.css";
 import { initTheme } from "./theme";

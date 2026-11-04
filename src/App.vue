@@ -177,7 +177,10 @@ onMounted(() => {
   --app-bar-surface-color: var(--md-surface);
   --app-bar-surface-text-color: var(--md-on-surface);
   --app-bar-title-font-size: 20px;
-  --app-bar-title-font-weight: 500;
+}
+
+.app-bar :deep(.var-app-bar__title) {
+  font-weight: 500;
 }
 
 .app-nav {

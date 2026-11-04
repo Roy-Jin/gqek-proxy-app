@@ -13,8 +13,10 @@
         <AppSegmented :items="loginModes" :active="mode" block @change="setMode" />
 
         <form v-if="mode === 'account'" class="mt-4 flex flex-col gap-3" @submit.prevent="submit">
-          <VarInput v-model="form.username" variant="outlined" placeholder="请输入账号" clearable type="number"/>
-          <VarInput v-model="form.password" type="password" variant="outlined" placeholder="请输入密码" clearable/>
+          <VarInput v-model="form.username" variant="outlined" placeholder="请输入账号" clearable type="text"
+            inputmode="numeric" aria-label="账号" />
+          <VarInput v-model="form.password" type="password" variant="outlined" placeholder="请输入密码" clearable
+            aria-label="密码" />
 
           <div class="flex items-stretch gap-2">
             <VarInput
@@ -22,7 +24,9 @@
               variant="outlined"
               placeholder="请输入验证码"
               class="flex-1 min-w-0"
-              type="number"
+              type="text"
+              inputmode="numeric"
+              aria-label="验证码"
             />
             <button
               type="button"

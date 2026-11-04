@@ -13,11 +13,12 @@
     </template>
 
     <!-- Up to date -->
-    <template v-else-if="state === 'up-to-date'">
-      <p class="text-sm leading-relaxed text-on-surface-variant text-center">
-        当前已是最新版本 v{{ currentVersion }}
-      </p>
-    </template>
+    <VarResult
+      v-else-if="state === 'up-to-date'"
+      type="success"
+      title="已是最新版本"
+      :description="`当前版本 v${currentVersion}`"
+    />
 
     <!-- New version available -->
     <template v-else-if="state === 'available' && release">
@@ -65,7 +66,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { Button as VarButton, Dialog, Loading as VarLoading } from "@varlet/ui";
+import { Button as VarButton, Dialog, Loading as VarLoading, Result as VarResult } from "@varlet/ui";
 import { useAppUpdate } from "@/composables/useAppUpdate";
 
 // `Dialog` is Varlet's imperative API; the render component lives on `.Component`

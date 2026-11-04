@@ -27,14 +27,14 @@
       <!-- Filters -->
       <div class="flex items-center gap-2 border-b border-outline-variant px-4 py-3 sm:px-5">
         <VarSelect
-          v-model="signFlag"
+          v-model="filterMode"
           variant="outlined"
-          size="small"  
+          size="small"
           placeholder="未筛选"
-          :options="signFlagOptions"
+          :options="filterOptions"
           :hint="false"
           class="w-28 shrink-0"
-          @change="fetchList"
+          @change="clearSelection"
         />
         <VarInput
           v-model="keyword"
@@ -61,9 +61,9 @@
           class="p-4"
         />
 
-        <ul v-else-if="members.length > 0" class="divide-y divide-outline-variant">
+        <ul v-else-if="displayMembers.length > 0" class="divide-y divide-outline-variant">
           <li
-            v-for="m in members"
+            v-for="m in displayMembers"
             :key="m.studentId"
             v-ripple
             class="relative flex cursor-pointer gap-3 overflow-hidden px-4 py-3.5 sm:px-5"
@@ -87,7 +87,7 @@
           </li>
         </ul>
 
-        <AppEmpty v-else-if="!loading" text="暂无成员数据" />
+        <AppEmpty v-else-if="!loading" :text="filterMode ? '没有符合条件的成员' : '暂无成员数据'" />
       </div>
 
       <p v-if="errorMsg" class="border-t border-outline-variant px-4 py-2 text-sm text-error sm:px-5">
@@ -96,10 +96,9 @@
 
       <!-- Action bar -->
       <div v-if="selectedIds.length > 0" class="flex items-center gap-2 border-t border-outline-variant px-4 py-3 sm:px-5">
-        <button type="button" class="flex select-none items-center gap-1.5 text-sm text-on-surface-variant" @click="toggleSelectAll">
-          <VarCheckbox :model-value="allSelected" @click.stop @change="toggleSelectAll" />
+        <VarCheckbox :model-value="allSelected" class="select-none text-sm" @change="toggleSelectAll">
           全选
-        </button>
+        </VarCheckbox>
         <span class="text-sm text-on-surface-variant">已选 <span class="font-semibold text-primary">{{ selectedIds.length }}</span> 人</span>
         <span class="flex-1"></span>
         <VarButton type="primary" tonal size="small" @click="clearSelection">取消</VarButton>
@@ -111,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   Button as VarButton,
   Checkbox as VarCheckbox,
@@ -140,19 +139,35 @@ const members = ref<MemberInfo[]>([]);
 const loading = ref(false);
 const errorMsg = ref("");
 const keyword = ref("");
-const signFlag = ref("");
+const filterMode = ref("");
 const countersigning = ref(false);
 
-const signFlagOptions = [
+const filterOptions = [
   { label: "未筛选", value: "" },
-  { label: "已完成", value: "3" },
-  { label: "仅签到", value: "1" },
-  { label: "仅签退", value: "2" },
-  { label: "未打卡", value: "0" },
+  { label: "已完成", value: "completed" },
+  { label: "未签到", value: "no-sign-in" },
+  { label: "未签退", value: "no-sign-out" },
+  { label: "未打卡", value: "unchecked" },
 ];
 
+// Server does not implement signFlag filtering, so filter by local sign counts
+const displayMembers = computed(() => {
+  switch (filterMode.value) {
+    case "completed":
+      return members.value.filter((member) => !!member.signNum && !!member.signOutNum);
+    case "no-sign-in":
+      return members.value.filter((member) => !member.signNum);
+    case "no-sign-out":
+      return members.value.filter((member) => !member.signOutNum);
+    case "unchecked":
+      return members.value.filter((member) => !member.signNum && !member.signOutNum);
+    default:
+      return members.value;
+  }
+});
+
 const { selectedIds, allSelected, toggle: toggleSelect, toggleAll: toggleSelectAll, clear: clearSelection } =
-  useMultiSelect(members, (member) => member.studentId);
+  useMultiSelect(displayMembers, (member) => member.studentId);
 
 let requestSeq = 0;
 
@@ -169,7 +184,8 @@ async function fetchList() {
     const body = (
       await listActivityMembers({
         activityId: props.activityId,
-        signFlag: signFlag.value,
+        // Keep the server-side flag empty; filtering is handled locally
+        signFlag: "",
         userName: keyword.value,
       })
     ).data;

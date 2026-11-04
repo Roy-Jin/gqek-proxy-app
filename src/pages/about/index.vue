@@ -29,8 +29,15 @@
           <p class="mt-0.5 text-xs text-on-surface-variant truncate">{{ teamLabel }}</p>
           <p class="mt-0.5 text-xs text-on-surface-variant truncate">{{ schoolLabel }}</p>
         </div>
-        <VarButton text type="primary" size="small" @click="openAccounts">切换</VarButton>
       </div>
+    </div>
+    <div class="mb-4 overflow-hidden rounded-lg bg-surface-container" :style="cellVars">
+      <VarCell title="账号相关" icon="card-account-details-outline" icon-class="text-on-surface-variant"
+        ripple @click="goAccount">
+        <template #extra>
+          <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+        </template>
+      </VarCell>
     </div>
 
     <!-- Entries: project info & settings -->
@@ -59,10 +66,6 @@
       </VarCell>
     </div>
 
-    <VarButton class="mt-4" type="danger" block @click="showLogoutConfirm = true">
-      退出登录
-    </VarButton>
-
     <!-- Developer statement dialog: hold the confirm button for 5s to unlock the debug entry -->
     <VarDialog v-model:show="showDevStatement" :title="env.developer.statementTitle" width="86vw"
       :dialog-style="{ maxWidth: '20rem' }" close-on-click-overlay>
@@ -79,53 +82,6 @@
         </div>
       </template>
     </VarDialog>
-
-    <!-- Account switch dialog -->
-    <VarDialog :show="showAccounts" title="切换账号" width="86vw" :dialog-style="{ maxWidth: '20rem' }"
-      close-on-click-overlay @update:show="onAccountsUpdateShow">
-      <div v-if="savedAccounts.length" class="max-h-64 space-y-2 overflow-auto">
-        <div v-for="account in savedAccounts" :key="account.userId"
-          v-ripple="{ disabled: account.userId === currentUserId }"
-          class="flex items-center gap-2 rounded-md border p-3" :class="account.userId === currentUserId
-            ? 'border-primary bg-primary-container'
-            : 'border-outline-variant cursor-pointer'" @click="onAccountClick(account.userId)">
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-medium text-on-surface truncate">{{ account.userName || "未提供" }}</p>
-            <p class="mt-0.5 text-xs text-on-surface-variant truncate">ID：{{ account.userId || "未提供" }}</p>
-          </div>
-          <span v-if="account.userId === currentUserId" class="shrink-0 text-[11px] text-primary">当前</span>
-          <VarButton v-else text type="primary" size="small" :disabled="!!switchingId"
-            @click.stop="removeAccount(account.userId)">
-            移除
-          </VarButton>
-        </div>
-      </div>
-      <p v-else class="text-center text-sm text-on-surface-variant">暂无已保存的账号</p>
-      <p v-if="switchError" class="mt-2 text-xs text-error break-all">{{ switchError }}</p>
-      <template #actions>
-        <div class="w-full px-6 pb-6">
-          <VarButton type="primary" tonal block @click="addAccount">
-            添加 / 登录新账号
-          </VarButton>
-        </div>
-      </template>
-    </VarDialog>
-
-    <!-- Logout confirmation dialog -->
-    <VarDialog v-model:show="showLogoutConfirm" title="退出登录" message-align="center" width="86vw"
-      :dialog-style="{ maxWidth: '20rem' }" close-on-click-overlay>
-      <p class="text-sm text-on-surface-variant">确定要退出当前账号吗？</p>
-      <template #actions>
-        <div class="flex w-full gap-2 px-6 pb-6">
-          <VarButton class="flex-1" type="primary" tonal @click="showLogoutConfirm = false">
-            取消
-          </VarButton>
-          <VarButton class="flex-1" type="danger" :loading="loggingOut" @click="logout">
-            退出
-          </VarButton>
-        </div>
-      </template>
-    </VarDialog>
   </div>
 </template>
 
@@ -137,15 +93,12 @@ import {
   Cell as VarCell,
   Dialog,
   Icon as VarIcon,
-  Ripple as vRipple,
 } from "@varlet/ui";
-import { listTeam, logout as logoutApi } from "@/api";
+import { listTeam } from "@/api";
 import type { TeamInfo } from "@/api";
 import { useAccountSession } from "@/composables/useAccountSession";
-import { useAccountSwitch } from "@/composables/useAccountSwitch";
 import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useDebugUnlock } from "@/composables/useDebugUnlock";
-import { useAccountsStore } from "@/stores/accounts";
 import { useEnvStore } from "@/stores/env";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";
@@ -157,16 +110,11 @@ const auth = useGlobal();
 const env = useEnvStore();
 const router = useRouter();
 const toast = useToast();
-const accounts = useAccountsStore();
 const session = useAccountSession();
-const { switchingId, errorMsg: switchError, savedAccounts, switchTo, resetError } = useAccountSwitch();
 const { hasUpdate } = useAppUpdate();
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);
-const showLogoutConfirm = ref(false);
-const loggingOut = ref(false);
-const showAccounts = ref(false);
 const showDevStatement = ref(false);
 
 // Keep Varlet Cell typography/colors aligned with the app's Material tokens
@@ -179,7 +127,6 @@ const cellVars = {
   "--cell-icon-right": "12px",
 };
 
-const currentUserId = computed(() => auth.user?.userId || "");
 const userNameLabel = computed(() => auth.user?.userName?.trim() || "未提供");
 const schoolLabel = computed(() => auth.user?.schoolName?.trim() || "未提供");
 const teamLabel = computed(
@@ -214,39 +161,8 @@ function goSettings() {
   router.push("/about/settings");
 }
 
-function openAccounts() {
-  resetError();
-  showAccounts.value = true;
-}
-
-function closeAccounts() {
-  if (switchingId.value) return;
-  showAccounts.value = false;
-  resetError();
-}
-
-// Overlay/escape closes go through closeAccounts so its switching guard still applies
-function onAccountsUpdateShow(value: boolean) {
-  if (!value) closeAccounts();
-}
-
-function onAccountClick(userId: string) {
-  if (userId === currentUserId.value) return;
-  void switchTo(userId);
-}
-
-function removeAccount(userId: string) {
-  if (userId === currentUserId.value) {
-    toast.error("不能移除当前登录账号");
-    return;
-  }
-  accounts.forget(userId);
-  toast.success("已移除保存的账号");
-}
-
-function addAccount() {
-  showAccounts.value = false;
-  session.beginAddAccount();
+function goAccount() {
+  router.push("/about/account");
 }
 
 async function fetchTeam() {
@@ -259,25 +175,6 @@ async function fetchTeam() {
     team.value = null;
   } finally {
     teamLoading.value = false;
-  }
-}
-
-async function logout() {
-  if (loggingOut.value) return;
-  loggingOut.value = true;
-  try {
-    // Best-effort server-side invalidation; local state is always cleared.
-    try {
-      await logoutApi();
-    } catch {
-      /* ignore network/server errors during logout */
-    }
-    session.forgetCurrent();
-    auth.logout();
-    toast.success("已安全退出登录");
-    router.replace("/");
-  } finally {
-    loggingOut.value = false;
   }
 }
 
