@@ -1,38 +1,23 @@
-import { ref } from "vue";
+import { Snackbar } from "@varlet/ui";
 import { useEnvStore } from "@/stores/env";
 
 export type ToastType = "success" | "error" | "info";
 
-export interface ToastItem {
-  id: number;
-  type: ToastType;
-  message: string;
-}
-
-const toasts = ref<ToastItem[]>([]);
-let seq = 0;
-
-function remove(id: number) {
-  toasts.value = toasts.value.filter((t) => t.id !== id);
-}
-
+/**
+ * Toast facade over Varlet Snackbar: pages keep calling
+ * success / error / info without owning presentation details.
+ */
 export function useToast() {
   const env = useEnvStore();
+  const defaultDuration = env.ui.toastDurationMs;
 
-  function push(type: ToastType, message: string, duration = env.ui.toastDurationMs) {
-    const id = ++seq;
-    toasts.value.push({ id, type, message });
-    if (duration > 0) {
-      setTimeout(() => remove(id), duration);
-    }
-    return id;
+  function show(type: ToastType, message: string, duration = defaultDuration) {
+    Snackbar[type]({ content: message, duration, position: "top" });
   }
 
   return {
-    toasts,
-    dismiss: remove,
-    success: (message: string, duration?: number) => push("success", message, duration),
-    error: (message: string, duration?: number) => push("error", message, duration),
-    info: (message: string, duration?: number) => push("info", message, duration),
+    success: (message: string, duration?: number) => show("success", message, duration),
+    error: (message: string, duration?: number) => show("error", message, duration),
+    info: (message: string, duration?: number) => show("info", message, duration),
   };
 }

@@ -1,103 +1,95 @@
 <template>
-  <AppCard class="mb-4">
+  <section class="mb-4 rounded-lg bg-surface-low p-4">
     <div class="mb-3 flex items-start justify-between gap-3">
       <div>
-        <p class="text-sm font-medium text-gray-700">下载加速代理</p>
-        <p class="mt-0.5 text-xs text-gray-400">按优先级顺序探测，优先使用靠上的节点</p>
+        <h3 class="text-base font-medium text-on-surface">下载加速代理</h3>
+        <p class="mt-0.5 text-xs text-on-surface-variant">按优先级顺序探测，优先使用靠上的节点</p>
       </div>
-      <button
-        type="button"
-        role="switch"
+      <VarSwitch
+        variant
+        :model-value="proxyEnabled"
         aria-label="启用下载加速代理"
-        :aria-checked="proxyEnabled"
-        class="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-        :class="proxyEnabled ? 'bg-primary' : 'bg-gray-200'"
-        @click="toggleProxy"
-      >
-        <span
-          class="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all"
-          :class="proxyEnabled ? 'left-[22px]' : 'left-0.5'"
-        ></span>
-      </button>
+        @change="toggleProxy"
+      />
     </div>
 
-    <p v-if="!proxyEnabled" class="py-4 text-center text-sm text-gray-400">
+    <p v-if="!proxyEnabled" class="py-4 text-center text-sm text-on-surface-variant">
       代理已关闭，下载将直连 GitHub
     </p>
 
     <template v-else>
       <div class="flex flex-wrap items-start justify-between gap-2">
-        <div class="min-w-0 text-xs text-gray-400">
+        <div class="min-w-0 text-xs text-on-surface-variant">
           <p v-if="probed">
-            本次使用：<span class="text-gray-600">{{ selectedProxy ?? "无（回退原始链接）" }}</span>
+            本次使用：<span class="text-on-surface">{{ selectedProxy ?? "无（回退原始链接）" }}</span>
           </p>
-          <p v-else class="text-gray-400">调整顺序后建议重新检测</p>
+          <p v-else>调整顺序后建议重新检测</p>
         </div>
         <div class="flex gap-1.5">
-          <AppButton variant="ghost" size="sm" :loading="probing" @click="runProbe">重新检测</AppButton>
-          <AppButton
-            variant="ghost"
-            size="sm"
-            :disabled="!isCustomOrder"
-            @click="resetOrder"
-          >
+          <VarButton text size="small" :loading="probing" @click="runProbe">重新检测</VarButton>
+          <VarButton text size="small" :disabled="!isCustomOrder" @click="resetOrder">
             重置顺序
-          </AppButton>
+          </VarButton>
         </div>
       </div>
 
-      <div class="mt-2 space-y-1.5">
+      <div class="mt-3 divide-y divide-outline-variant overflow-hidden rounded-md bg-surface-high">
         <div
           v-for="(proxy, index) in proxies"
           :key="proxy"
-          class="flex items-center gap-2 rounded-lg border px-2.5 py-2"
-          :class="selectedProxy === proxy ? 'border-primary/40 bg-primary-soft' : 'border-gray-200'"
+          class="flex items-center gap-2 px-3 py-2"
+          :class="selectedProxy === proxy ? 'bg-secondary-container' : ''"
         >
-          <span class="shrink-0 text-[11px] text-gray-400">#{{ index + 1 }}</span>
+          <span class="shrink-0 text-[11px] text-on-surface-variant">#{{ index + 1 }}</span>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-xs text-gray-700">{{ proxy }}</p>
+            <p class="truncate text-xs text-on-surface">{{ proxy }}</p>
             <p class="text-[11px]" :class="statusClass(resultFor(proxy))">
               {{ detailFor(proxy) }}
             </p>
           </div>
           <span
             v-if="selectedProxy === proxy"
-            class="shrink-0 text-[11px] font-medium text-primary"
+            class="inline-flex shrink-0 items-center rounded-sm bg-primary-container px-2 py-0.5 text-xs font-medium text-on-primary-container"
           >
             将使用
           </span>
           <div class="flex shrink-0 flex-col">
-            <button
-              type="button"
+            <VarButton
+              icon-container
+              text
+              round
+              size="small"
               aria-label="上移"
-              class="px-1 leading-tight text-gray-400 transition-colors hover:text-primary disabled:opacity-30"
               :disabled="index === 0"
               @click="move(index, -1)"
             >
-              ↑
-            </button>
-            <button
-              type="button"
+              <VarIcon name="chevron-down" :size="16" class="rotate-180" />
+            </VarButton>
+            <VarButton
+              icon-container
+              text
+              round
+              size="small"
               aria-label="下移"
-              class="px-1 leading-tight text-gray-400 transition-colors hover:text-primary disabled:opacity-30"
               :disabled="index === proxies.length - 1"
               @click="move(index, 1)"
             >
-              ↓
-            </button>
+              <VarIcon name="chevron-down" :size="16" />
+            </VarButton>
           </div>
         </div>
       </div>
 
-      <p v-if="probed && !selectedProxy" class="mt-2 text-xs text-gray-400">
+      <p v-if="probed && !selectedProxy" class="mt-2 text-xs text-on-surface-variant">
         全部代理不可用，下载时将回退为原始链接
       </p>
     </template>
-  </AppCard>
+  </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import { Button as VarButton, Icon as VarIcon, Switch as VarSwitch } from "@varlet/ui";
 import { useEnvStore } from "@/stores/env";
 import { useUpdateStore } from "@/stores/update";
 import { useToast } from "@/composables/useToast";
@@ -106,8 +98,6 @@ import {
   type ProxyProbeResult,
   type ProxyProbeStatus,
 } from "@/utils/downloadProxy";
-import AppCard from "@/components/ui/AppCard.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 
 const STATUS_LABELS: Record<ProxyProbeStatus, string> = {
   available: "可用",
@@ -124,14 +114,12 @@ const results = ref<ProxyProbeResult[]>([]);
 const probing = ref(false);
 const probed = ref(false);
 let controller: AbortController | null = null;
-// Incremented per probe round so stale rounds cannot write into the latest results.
 let probeRound = 0;
 
 const proxyEnabled = computed(() => settings.proxyEnabled);
 const proxies = computed(() => settings.orderedProxies);
 const isCustomOrder = computed(() => settings.proxyOrder.length > 0);
 
-// The proxy a real download would use: the first available one in priority order.
 const selectedProxy = computed(() => {
   for (const proxy of proxies.value) {
     if (resultFor(proxy)?.status === "available") return proxy;
@@ -144,10 +132,10 @@ function resultFor(proxy: string): ProxyProbeResult | undefined {
 }
 
 function statusClass(result: ProxyProbeResult | undefined): string {
-  if (!result) return "text-gray-400";
-  if (result.status === "available") return "text-green-600";
-  if (result.status === "timeout") return "text-amber-500";
-  return "text-gray-400";
+  if (!result) return "text-on-surface-variant";
+  if (result.status === "available") return "text-success";
+  if (result.status === "timeout") return "text-warning";
+  return "text-on-surface-variant";
 }
 
 function detailFor(proxy: string): string {
@@ -180,9 +168,7 @@ function resetOrder() {
   void runProbe();
 }
 
-// Sequential probing mirrors the real download path: same order, same priority.
 async function runProbe() {
-  // Supersede any in-flight round before starting a fresh one.
   controller?.abort();
   const round = ++probeRound;
   const current = new AbortController();
@@ -196,12 +182,11 @@ async function runProbe() {
       const result = await probeProxy(proxy, env.links.apkDownloadUrl, {
         signal: current.signal,
       });
-      // Append as soon as each probe settles; ignore rounds that were superseded.
       if (round !== probeRound) return;
       results.value = [...results.value, result];
     }
   } catch {
-    // Canceled rounds carry no status; nothing to render.
+    // Canceled rounds carry no status
   } finally {
     if (round === probeRound) {
       controller = null;
@@ -219,3 +204,5 @@ onUnmounted(() => {
   controller?.abort();
 });
 </script>
+
+

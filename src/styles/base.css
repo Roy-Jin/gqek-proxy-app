@@ -1,19 +1,92 @@
 @import "tailwindcss";
 
-@theme {
+/*
+ * Tailwind stays a layout/typography tool: color, radius and shadow keys all
+ * point at runtime Material 3 tokens. Inline mode keeps the utilities
+ * referencing --md-* so a theme swap needs no rebuild.
+ */
+@theme inline {
     --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue",
         Arial, sans-serif;
 
-    /* Brand / primary (teal) */
-    --color-primary: #0d9488;
-    --color-primary-hover: #0f766e;
-    --color-primary-soft: #ccfbf1;
-    --color-primary-fg: #0f766e;
+    /* Primary */
+    --color-primary: var(--md-primary);
+    --color-on-primary: var(--md-on-primary);
+    --color-primary-container: var(--md-primary-container);
+    --color-on-primary-container: var(--md-on-primary-container);
+
+    /* Secondary container (MD3 segmented buttons, tonal chips) */
+    --color-secondary-container: var(--md-secondary-container);
+    --color-on-secondary-container: var(--md-on-secondary-container);
+
+    /* Surface hierarchy */
+    --color-surface: var(--md-surface);
+    --color-surface-low: var(--md-surface-low);
+    --color-surface-container: var(--md-surface-container);
+    --color-surface-high: var(--md-surface-high);
+    --color-surface-highest: var(--md-surface-highest);
+
+    /* Content */
+    --color-on-surface: var(--md-on-surface);
+    --color-on-surface-variant: var(--md-on-surface-variant);
+
+    /* Outline */
+    --color-outline: var(--md-outline);
+    --color-outline-variant: var(--md-outline-variant);
+
+    /* Error */
+    --color-error: var(--md-error);
+    --color-on-error: var(--md-on-error);
+    --color-error-container: var(--md-error-container);
+    --color-on-error-container: var(--md-on-error-container);
+
+    /* Success */
+    --color-success: var(--md-success);
+    --color-on-success: var(--md-on-success);
+    --color-success-container: var(--md-success-container);
+    --color-on-success-container: var(--md-on-success-container);
+
+    /* Warning */
+    --color-warning: var(--md-warning);
+    --color-on-warning: var(--md-on-warning);
+    --color-warning-container: var(--md-warning-container);
+    --color-on-warning-container: var(--md-on-warning-container);
+
+    /* Elevation */
+    --shadow-e0: var(--md-elevation-0);
+    --shadow-e1: var(--md-elevation-1);
+    --shadow-e2: var(--md-elevation-2);
+    --shadow-e3: var(--md-elevation-3);
+
+    /* Shape */
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-2xl: 28px;
+    --radius-3xl: 36px;
 }
 
 :root {
     color-scheme: light;
+
+    /* Motion tokens — Material 3 standard easing */
+    --md-motion-fast: 150ms;
+    --md-motion-base: 200ms;
+    --md-motion-slow: 250ms;
+    --md-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --md-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --md-ease-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --md-ease-emphasized-accelerate: cubic-bezier(0.3, 0, 1, 1);
+
+    /* Ripple overlay — subtle ink spread on interactive surfaces */
+    --md-ripple-hover: color-mix(in srgb, currentColor 8%, transparent);
+    --md-ripple-pressed: color-mix(in srgb, currentColor 12%, transparent);
+    --md-state-layer-hover: color-mix(in srgb, currentColor 8%, transparent);
+    --md-state-layer-pressed: color-mix(in srgb, currentColor 12%, transparent);
+    --md-state-layer-focus: color-mix(in srgb, currentColor 10%, transparent);
 }
 
 * {
@@ -37,8 +110,8 @@ body {
     -webkit-touch-callout: none;
     touch-action: manipulation;
     overscroll-behavior-y: none;
-    background-color: #f5f6f8;
-    color: #1f2937;
+    background-color: var(--md-surface);
+    color: var(--md-on-surface);
     user-select: none;
 }
 
@@ -67,17 +140,25 @@ img {
 }
 
 ::selection {
-    background-color: var(--color-primary);
-    color: #fff;
+    background-color: var(--md-primary);
+    color: var(--md-on-primary);
 }
 
-/* Shared fade for modal dialogs */
-.modal-enter-active,
-.modal-leave-active {
-    transition: opacity 0.2s ease;
+/* Varlet Switch variant: override hard-coded #888 colors to follow MD3 outline token */
+:root {
+    --switch-track-background: var(--md-surface-container-highest);
+    --switch-variant-track-border-color: var(--md-outline);
+    --switch-variant-handle-background: var(--md-outline);
 }
 
-.modal-enter-from,
-.modal-leave-to {
-    opacity: 0;
+/* Low-end WebView falls back to the reduced motion rules below */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

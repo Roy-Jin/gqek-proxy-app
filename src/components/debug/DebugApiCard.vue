@@ -1,46 +1,62 @@
 <template>
-  <AppCard class="mb-4">
-    <p class="text-sm font-medium text-gray-700 mb-3">API 调试</p>
-    <div class="flex gap-2 mb-2">
-      <select
+  <section class="mb-4 rounded-lg bg-surface-low p-4">
+    <h3 class="mb-3 text-base font-medium text-on-surface">API 调试</h3>
+    <div class="flex gap-2">
+      <VarSelect
         v-model="method"
-        class="px-2 py-2 text-sm rounded-lg border border-gray-300 bg-white outline-none focus:border-primary"
-      >
-        <option value="get">GET</option>
-        <option value="post">POST</option>
-      </select>
-      <input
+        class="debug-field w-28 shrink-0"
+        variant="outlined"
+        :hint="false"
+        :options="methodOptions"
+      />
+      <VarInput
         v-model="path"
-        type="text"
+        class="debug-field min-w-0 flex-1"
+        variant="outlined"
         placeholder="/system/team/list"
-        class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/25"
+        clearable
+        :hint="false"
       />
     </div>
-    <textarea
+    <VarInput
       v-model="payload"
-      rows="3"
+      class="debug-field mt-2"
+      textarea
+      variant="outlined"
+      :rows="3"
       placeholder="参数（JSON，可留空）"
-      class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 resize-none"
-    ></textarea>
-    <AppButton variant="secondary" size="sm" class="mt-2" :loading="requesting" @click="runRequest">
+      :hint="false"
+    />
+    <VarButton
+      type="primary"
+      tonal
+      size="small"
+      class="mt-2"
+      :loading="requesting"
+      @click="runRequest"
+    >
       发起请求
-    </AppButton>
+    </VarButton>
     <pre
       v-if="result"
-      class="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 overflow-auto whitespace-pre-wrap break-all"
+      class="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-md bg-surface-high p-3 font-mono text-xs text-on-surface-variant"
     >{{ result }}</pre>
-  </AppCard>
+  </section>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { Button as VarButton, Input as VarInput, Select as VarSelect } from "@varlet/ui";
 import { http } from "@/api";
 import { useToast } from "@/composables/useToast";
 import { errorMessage } from "@/utils/error";
-import AppCard from "@/components/ui/AppCard.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 
 const toast = useToast();
+
+const methodOptions = [
+  { label: "GET", value: "get" },
+  { label: "POST", value: "post" },
+];
 
 const method = ref<"get" | "post">("get");
 const path = ref("/system/team/list");
@@ -85,3 +101,12 @@ async function runRequest() {
   }
 }
 </script>
+
+<style scoped>
+.debug-field {
+  --field-decorator-text-color: var(--md-on-surface);
+  --field-decorator-blur-color: var(--md-outline);
+  --field-decorator-focus-color: var(--md-primary);
+  --field-decorator-line-border-radius: 12px;
+}
+</style>

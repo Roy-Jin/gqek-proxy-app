@@ -1,6 +1,12 @@
-<template></template>
+<template>
+  <div class="p-4 max-w-3xl mx-auto flex flex-col items-center justify-center py-24 gap-3">
+    <VarIcon name="alert-circle-outline" :size="48" class="text-on-surface-variant" />
+    <p class="text-sm text-on-surface-variant">页面不存在，正在返回首页...</p>
+  </div>
+</template>
 
 <script setup lang="ts">
+import { Icon as VarIcon } from "@varlet/ui";
 import { useRouter } from "vue-router";
 const router = useRouter();
 router.replace("/activity");

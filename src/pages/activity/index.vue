@@ -1,134 +1,141 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-3xl mx-auto">
-    <div class="flex items-center justify-between mb-4">
+  <div class="p-4 max-w-3xl mx-auto">
+    <div class="flex items-start justify-between gap-3 mb-4">
       <div>
-        <h2 class="text-lg font-semibold text-gray-900">活动管理</h2>
-        <p class="mt-0.5 text-sm text-gray-500">本组织主办的活动</p>
+        <h2 class="text-[22px] leading-7 font-medium text-on-surface">活动</h2>
+        <p class="mt-1 text-sm text-on-surface-variant">本组织主办的活动</p>
       </div>
-      <AppButton variant="secondary" size="sm" :loading="loading" @click="refresh">
-        <AppIcon name="refresh" class="h-4 w-4" />
+      <VarButton text type="primary" size="small" :loading="loading" @click="refresh">
+        <VarIcon name="refresh" :size="16" class="mr-1" />
         刷新
-      </AppButton>
+      </VarButton>
     </div>
 
     <!-- Tabs -->
-    <AppSegmentedTabs :items="tabs" :active="activeTab" @change="switchTab" />
+    <AppSegmented :items="tabs" :active="activeTab" block @change="switchTab" />
 
     <!-- Loading skeleton (first load) -->
-    <div v-if="loading && rows.length === 0" class="space-y-3">
+    <div v-if="loading && rows.length === 0" class="mt-3 space-y-3">
       <div
         v-for="i in 5"
         :key="i"
-        class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-100 animate-pulse"
+        class="flex items-center gap-3 p-3 rounded-lg bg-surface-low animate-pulse"
       >
-        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gray-200 shrink-0"></div>
+        <div class="w-20 h-20 rounded-md bg-surface-high shrink-0"></div>
         <div class="flex-1 space-y-2">
-          <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div class="h-3 bg-gray-100 rounded w-1/2"></div>
-          <div class="h-3 bg-gray-100 rounded w-2/3"></div>
+          <div class="h-4 rounded bg-surface-high w-3/4"></div>
+          <div class="h-3 rounded bg-surface-high w-1/2"></div>
+          <div class="h-3 rounded bg-surface-high w-2/3"></div>
         </div>
       </div>
     </div>
 
     <!-- Error state (first load) -->
-    <AppErrorState v-else-if="errorMsg && rows.length === 0" :message="errorMsg" @retry="refresh" />
+    <AppErrorState v-else-if="errorMsg && rows.length === 0" class="mt-3" :message="errorMsg" @retry="refresh" />
 
     <!-- Empty state -->
-    <AppCard v-else-if="rows.length === 0">
+    <div v-else-if="rows.length === 0" class="mt-3 rounded-lg bg-surface-low">
       <AppEmpty text="暂无本组织活动记录" />
-    </AppCard>
+    </div>
 
     <!-- Activity list -->
-    <div v-else class="space-y-3">
-      <article
+    <div v-else class="mt-3 space-y-3">
+      <VarCard
         v-for="item in rows"
         :key="item.activityId"
-        class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-200/70 shadow-sm transition-all duration-200 hover:border-gray-300 hover:shadow-md active:bg-gray-50 cursor-pointer"
+        ripple
+        :elevation="0"
+        style="background: var(--md-surface-low); border-radius: 16px"
         @click="openDetail(item)"
       >
-        <div class="flex flex-col items-center gap-1.5 shrink-0 w-20 sm:w-24">
-          <div class="w-full aspect-square rounded-xl overflow-hidden bg-gray-100">
-            <img
-              v-if="item.activityAvatarUrl"
-              :src="item.activityAvatarUrl"
-              :alt="item.activityName"
-              class="w-full h-full object-cover"
-              loading="lazy"
-            />
-            <div v-else class="w-full h-full grid place-items-center text-gray-300">
-              <AppIcon name="inbox" class="h-6 w-6" />
+        <div class="flex items-center gap-3 p-3">
+          <div class="flex flex-col items-center gap-1.5 shrink-0 w-20">
+            <div class="w-full aspect-square rounded-md overflow-hidden bg-surface-high">
+              <img
+                v-if="item.activityAvatarUrl"
+                :src="item.activityAvatarUrl"
+                :alt="item.activityName"
+                class="w-full h-full object-cover"
+                loading="lazy"
+              />
+              <div v-else class="w-full h-full grid place-items-center text-on-surface-variant">
+                <VarIcon name="file-document-outline" :size="24" />
+              </div>
             </div>
-          </div>
-          <span class="px-1.5 py-0.5 text-[10px] leading-none rounded bg-gray-100 text-gray-500 whitespace-nowrap">
-            {{ activityStatusLabel(item.status) }}
-          </span>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col">
-          <h3 class="text-sm font-semibold text-gray-900 truncate">{{ item.activityName }}</h3>
-          <p class="mt-1 text-xs text-gray-500 truncate">{{ item.maintainerName }}</p>
-          <span
-            class="inline-block w-fit mt-1.5 px-2 py-0.5 text-[11px] leading-none rounded-md bg-primary-soft text-primary-fg"
-          >
-            {{ item.activityClassifyName }}
-          </span>
-
-          <div class="mt-auto pt-1.5 space-y-1 text-xs text-gray-500">
-            <div class="flex items-center gap-1">
-              <AppIcon name="calendar" class="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <span class="truncate">{{ item.activityStartTime }} ~ {{ item.activityEndTime }}</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <AppIcon name="pin" class="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <span class="truncate">{{ item.activityLocation || '待定' }}</span>
-            </div>
-          </div>
-
-          <div class="mt-1.5 flex items-center gap-3 text-xs text-gray-400">
-            <span class="inline-flex items-center gap-1">
-              <AppIcon name="users" class="h-3.5 w-3.5" />
-              {{ item.memberNum }} 人
-            </span>
-            <span class="inline-flex items-center gap-1">
-              <AppIcon name="clock" class="h-3.5 w-3.5" />
-              {{ item.duration || '—' }} 小时
+            <span class="rounded-full bg-surface-high px-2.5 py-1 text-[11px] text-on-surface-variant whitespace-nowrap">
+              {{ activityStatusLabel(item.status) }}
             </span>
           </div>
+
+          <div class="flex-1 min-w-0 flex flex-col">
+            <h3 class="text-[15px] font-semibold text-on-surface truncate">{{ item.activityName }}</h3>
+            <p class="mt-1 text-xs text-on-surface-variant truncate">{{ item.maintainerName }}</p>
+            <span
+              class="mt-1.5 inline-flex w-fit items-center rounded-sm bg-primary-container px-2 py-0.5 text-xs font-medium text-on-primary-container"
+            >
+              {{ item.activityClassifyName }}
+            </span>
+
+            <div class="mt-auto pt-2 space-y-1 text-xs text-on-surface-variant">
+              <div class="flex items-center gap-1">
+                <VarIcon name="calendar-month-outline" :size="14" class="shrink-0" />
+                <span class="truncate">{{ item.activityStartTime }} ~ {{ item.activityEndTime }}</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <VarIcon name="map-marker-outline" :size="14" class="shrink-0" />
+                <span class="truncate">{{ item.activityLocation || '待定' }}</span>
+              </div>
+            </div>
+
+            <div class="mt-2 flex items-center gap-3 text-xs text-on-surface-variant">
+              <span class="inline-flex items-center gap-1">
+                <VarIcon name="account-circle-outline" :size="14" />
+                {{ item.memberNum }} 人
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <VarIcon name="history" :size="14" />
+                {{ item.duration || '—' }} 小时
+              </span>
+            </div>
+          </div>
         </div>
-      </article>
+      </VarCard>
     </div>
 
-    <!-- Manual load more: available for both empty and non-empty lists -->
-    <div v-if="!loading && !(errorMsg && rows.length === 0)" class="py-3 text-center">
-      <AppButton
-        v-if="!noMore"
-        variant="secondary"
-        size="sm"
-        :loading="loadingMore"
-        @click="loadMore"
-      >
-        <AppIcon name="refresh" class="h-4 w-4" />
-        加载更多
-      </AppButton>
-      <span v-else-if="rows.length > 0" class="text-sm text-gray-400">没有更多了</span>
+    <!-- Pager: next page appends the next batch; going back is a no-op -->
+    <div
+      v-if="!loading && !(errorMsg && rows.length === 0) && (!noMore || rows.length > 0)"
+      class="flex justify-center py-4"
+    >
+      <VarPagination
+        :current="loadedPages"
+        :size="PAGE_SIZE"
+        :total="pagerTotal"
+        simple
+        :disabled="loadingMore"
+        @change="onPageChange"
+      />
     </div>
 
-    <p v-if="errorMsg && rows.length !== 0" class="mt-4 text-sm text-red-600">{{ errorMsg }}</p>
+    <p v-if="errorMsg && rows.length !== 0" class="mt-4 text-sm text-error">{{ errorMsg }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import {
+  Button as VarButton,
+  Card as VarCard,
+  Icon as VarIcon,
+  Pagination as VarPagination,
+} from "@varlet/ui";
 import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel } from "@/api";
 import type { ActivityInfo, VolunteerActivityInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
 import { errorMessage } from "@/utils/error";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppIcon from "@/components/ui/AppIcon.vue";
-import AppCard from "@/components/ui/AppCard.vue";
+import AppSegmented from "@/components/ui/AppSegmented.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
-import AppSegmentedTabs from "@/components/ui/AppSegmentedTabs.vue";
 import AppErrorState from "@/components/ui/AppErrorState.vue";
 
 type ActivityTab = "volunteer" | "sports";
@@ -172,6 +179,11 @@ const loading = ref(false);
 const loadingMore = ref(false);
 const noMore = ref(false);
 const errorMsg = ref("");
+
+/** Batches pulled so far; drives the simple pager. */
+const loadedPages = ref(0);
+/** Advertise one extra page until the server reports exhaustion. */
+const pagerTotal = computed(() => (noMore.value ? loadedPages.value : loadedPages.value + 1) * PAGE_SIZE);
 
 let serverPage = 1;
 let orgMaintainerIds = new Set<string>();
@@ -263,6 +275,7 @@ async function fetchBatch(tab: ActivityTab, seq: number) {
     if (seq !== requestSeq) return false;
     if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
     serverPage++;
+    loadedPages.value++;
     if (body.rows.length < PAGE_SIZE) noMore.value = true;
     collected.push(...body.rows);
     return true;
@@ -293,6 +306,7 @@ async function initTab() {
   errorMsg.value = "";
   noMore.value = false;
   serverPage = 1;
+  loadedPages.value = 0;
   orgMaintainerIds = new Set();
   seenIds = new Set();
   rows.value = [];
@@ -319,6 +333,10 @@ async function loadMore() {
   } finally {
     if (seq === requestSeq) loadingMore.value = false;
   }
+}
+
+function onPageChange(page: number) {
+  if (page > loadedPages.value) loadMore();
 }
 
 function switchTab(v: ActivityTab) {

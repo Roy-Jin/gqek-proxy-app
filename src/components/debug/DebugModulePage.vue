@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-3xl mx-auto">
-    <p v-if="subtitle" class="mb-4 text-sm text-gray-500">{{ subtitle }}</p>
+  <div class="p-4 max-w-3xl mx-auto">
+    <p v-if="subtitle" class="mb-4 text-sm text-on-surface-variant">{{ subtitle }}</p>
     <slot />
   </div>
 </template>

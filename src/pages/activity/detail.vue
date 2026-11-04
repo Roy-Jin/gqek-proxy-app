@@ -1,12 +1,15 @@
 <template>
   <div class="p-4 sm:p-6 max-w-2xl mx-auto">
-    <AppSpinner v-if="loading && !detail" />
+    <div v-if="loading && !detail" class="flex flex-col items-center justify-center py-16 gap-4">
+      <VarLoading type="circle" color="var(--md-primary)" />
+      <p class="text-sm text-on-surface-variant">加载中...</p>
+    </div>
 
     <AppErrorState v-else-if="errorMsg" :message="errorMsg" @retry="fetchDetail" />
 
     <template v-else-if="detail">
       <!-- Cover -->
-      <div class="rounded-2xl overflow-hidden bg-primary-soft w-40 sm:w-56 mx-auto">
+      <div class="rounded-2xl overflow-hidden bg-primary-container w-40 sm:w-56 mx-auto">
         <img
           v-if="hasCover"
           :src="cover"
@@ -15,140 +18,125 @@
           referrerpolicy="no-referrer"
           @error="onImgError"
         />
-        <div v-else class="w-full aspect-square grid place-items-center text-gray-300">
-          <AppIcon name="inbox" class="h-8 w-8 opacity-60" />
+        <div v-else class="w-full aspect-square grid place-items-center text-on-primary-container">
+          <VarIcon name="image-outline" :size="32" class="opacity-60" />
         </div>
       </div>
 
       <!-- Title header -->
-      <AppCard class="mt-4">
+      <div class="bg-surface-low rounded-lg p-4 mt-4">
         <div class="flex items-start justify-between gap-3">
-          <h3 class="text-base font-semibold text-gray-900">{{ detail.activityName }}</h3>
-          <span class="shrink-0 px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-500">{{ activityStatusLabel(detail.status) }}</span>
+          <h3 class="text-base font-semibold text-on-surface">{{ detail.activityName }}</h3>
+          <span class="shrink-0 px-2 py-0.5 text-xs rounded bg-surface-high text-on-surface-variant">{{ activityStatusLabel(detail.status) }}</span>
         </div>
         <div class="mt-2 flex items-center gap-2 flex-wrap">
-          <span class="px-2 py-0.5 text-xs rounded-md bg-primary-soft text-primary-fg">{{ detail.activityClassifyName }}</span>
-          <span v-if="detail.processName" class="text-xs text-gray-400">{{ detail.processName }}</span>
+          <span class="px-2 py-0.5 text-xs rounded-md bg-primary-container text-on-primary-container">{{ detail.activityClassifyName }}</span>
+          <span v-if="detail.processName" class="text-xs text-on-surface-variant">{{ detail.processName }}</span>
         </div>
-      </AppCard>
+      </div>
 
       <!-- Sign in / out -->
-      <AppCard v-if="showSign" class="mt-4">
-        <p class="text-sm font-semibold text-gray-900 mb-3">签到管理</p>
+      <div v-if="showSign" class="bg-surface-low rounded-lg p-4 mt-4">
+        <p class="text-sm font-semibold text-on-surface mb-3">签到管理</p>
         <div class="flex items-center justify-between py-2">
-          <span class="text-sm text-gray-700">签到</span>
-          <button
-            type="button"
-            class="relative h-6 w-11 rounded-full transition-colors disabled:opacity-40"
-            :class="detail.signFlag === '1' ? 'bg-primary' : 'bg-gray-200'"
-            :disabled="signing"
-            @click="toggleSign"
-          >
-            <span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform" :class="detail.signFlag === '1' ? 'translate-x-5' : ''"></span>
-          </button>
+          <span class="text-sm text-on-surface">签到</span>
+          <VarSwitch variant :model-value="detail.signFlag === '1'" :disabled="signing" @change="toggleSign" />
         </div>
-        <div class="flex items-center justify-between py-2 border-t border-gray-100">
-          <span class="text-sm text-gray-700">签退</span>
-          <button
-            type="button"
-            class="relative h-6 w-11 rounded-full transition-colors disabled:opacity-40"
-            :class="detail.signOutFlag === '1' ? 'bg-primary' : 'bg-gray-200'"
-            :disabled="signing"
-            @click="toggleSignOut"
-          >
-            <span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform" :class="detail.signOutFlag === '1' ? 'translate-x-5' : ''"></span>
-          </button>
+        <div class="flex items-center justify-between py-2 border-t border-outline-variant">
+          <span class="text-sm text-on-surface">签退</span>
+          <VarSwitch variant :model-value="detail.signOutFlag === '1'" :disabled="signing" @change="toggleSignOut" />
         </div>
         <button
           type="button"
-          class="w-full flex items-center justify-between py-2.5 border-t border-gray-100 text-sm text-gray-700 transition-colors hover:text-primary-fg"
+          v-ripple
+          class="w-full flex items-center justify-between py-2.5 border-t border-outline-variant text-sm text-on-surface transition-colors"
           @click="showMembers = true"
         >
           <span>成员补签</span>
-          <AppIcon name="chevron-right" class="h-4 w-4 text-gray-400" />
+          <VarIcon name="chevron-right" :size="16" class="text-on-surface-variant" />
         </button>
-      </AppCard>
+      </div>
 
       <!-- Basic info -->
-      <AppCard class="mt-4">
-        <p class="text-sm font-semibold text-gray-900 mb-3">基本信息</p>
+      <div class="bg-surface-low rounded-lg p-4 mt-4">
+        <p class="text-sm font-semibold text-on-surface mb-3">基本信息</p>
         <dl class="space-y-3 text-sm">
           <div class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">主办方</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">{{ detail.maintainerName || '—' }}</dd>
+            <dt class="w-24 shrink-0 text-on-surface-variant">主办方</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.maintainerName || '—' }}</dd>
           </div>
           <div v-if="detail.studentName" class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">负责人</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">
+            <dt class="w-24 shrink-0 text-on-surface-variant">负责人</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">
               {{ detail.studentName }}<template v-if="detail.studentPhone"> · {{ detail.studentPhone }}</template>
             </dd>
           </div>
           <div v-if="type === 'volunteer' && duration" class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">活动时长</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">{{ duration }} 小时</dd>
+            <dt class="w-24 shrink-0 text-on-surface-variant">活动时长</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ duration }} 小时</dd>
           </div>
           <div class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">参与人数</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">
+            <dt class="w-24 shrink-0 text-on-surface-variant">参与人数</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">
               {{ detail.memberNum }}<template v-if="limitPeople">/{{ limitPeople }}</template> 人
             </dd>
           </div>
           <div v-if="detail.fund" class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">活动经费</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">{{ detail.fund }} 元</dd>
+            <dt class="w-24 shrink-0 text-on-surface-variant">活动经费</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.fund }} 元</dd>
           </div>
         </dl>
-      </AppCard>
+      </div>
 
       <!-- Time & location -->
-      <AppCard class="mt-4">
-        <p class="text-sm font-semibold text-gray-900 mb-3">时间与地点</p>
+      <div class="bg-surface-low rounded-lg p-4 mt-4">
+        <p class="text-sm font-semibold text-on-surface mb-3">时间与地点</p>
         <dl class="space-y-3 text-sm">
           <div class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">活动时间</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">{{ detail.activityStartTime }} ~ {{ detail.activityEndTime }}</dd>
+            <dt class="w-24 shrink-0 text-on-surface-variant">活动时间</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.activityStartTime }} ~ {{ detail.activityEndTime }}</dd>
           </div>
           <div class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">报名时间</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">{{ detail.registerStartTime }} ~ {{ detail.registerEndTime }}</dd>
+            <dt class="w-24 shrink-0 text-on-surface-variant">报名时间</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.registerStartTime }} ~ {{ detail.registerEndTime }}</dd>
           </div>
           <div class="flex">
-            <dt class="w-24 shrink-0 text-gray-400">活动地点</dt>
-            <dd class="flex-1 min-w-0 text-gray-700 text-right">{{ detail.activityLocation || '—' }}</dd>
+            <dt class="w-24 shrink-0 text-on-surface-variant">活动地点</dt>
+            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.activityLocation || '—' }}</dd>
           </div>
         </dl>
-      </AppCard>
+      </div>
 
       <!-- Teachers -->
-      <AppCard v-if="teachers.length" class="mt-4">
-        <p class="text-sm font-semibold text-gray-900 mb-3">指导老师</p>
+      <div v-if="teachers.length" class="bg-surface-low rounded-lg p-4 mt-4">
+        <p class="text-sm font-semibold text-on-surface mb-3">指导老师</p>
         <ul class="space-y-2">
-          <li v-for="(t, i) in teachers" :key="i" class="text-sm text-gray-700 flex items-center justify-between gap-2">
+          <li v-for="(t, i) in teachers" :key="i" class="text-sm text-on-surface flex items-center justify-between gap-2">
             <span>{{ t.name }}</span>
-            <span class="text-gray-400 text-xs shrink-0">{{ t.detail }}</span>
+            <span class="text-on-surface-variant text-xs shrink-0">{{ t.detail }}</span>
           </li>
         </ul>
-      </AppCard>
+      </div>
 
       <!-- Class hours -->
-      <AppCard v-if="classHours.length" class="mt-4">
-        <p class="text-sm font-semibold text-gray-900 mb-3">学时明细</p>
+      <div v-if="classHours.length" class="bg-surface-low rounded-lg p-4 mt-4">
+        <p class="text-sm font-semibold text-on-surface mb-3">学时明细</p>
         <div class="flex flex-wrap gap-2">
           <span
             v-for="(h, i) in classHours"
             :key="i"
-            class="px-2.5 py-1 text-xs rounded-lg bg-gray-100 text-gray-700"
+            class="px-2.5 py-1 text-xs rounded-lg bg-surface-high text-on-surface"
           >{{ h }} 小时</span>
         </div>
-      </AppCard>
+      </div>
 
       <!-- Description -->
-      <AppCard v-if="detail.content || detail.purpose" class="mt-4">
-        <p class="text-sm font-semibold text-gray-900 mb-3">活动说明</p>
-        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-all">
+      <div v-if="detail.content || detail.purpose" class="bg-surface-low rounded-lg p-4 mt-4">
+        <p class="text-sm font-semibold text-on-surface mb-3">活动说明</p>
+        <p class="text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-all">
           {{ detail.content || detail.purpose }}
         </p>
-      </AppCard>
+      </div>
     </template>
 
     <MemberCountersignModal :open="showMembers" :activity-id="id" @close="showMembers = false" />
@@ -159,14 +147,11 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { definePage } from "vue-router/experimental";
+import { Icon as VarIcon, Loading as VarLoading, Switch as VarSwitch, Ripple as vRipple } from "@varlet/ui";
 import { getActivityDetail, getVolunteerActivityDetail, signFlagChange, activityStatusLabel } from "@/api";
 import type { ActivityDetail } from "@/api";
 import { useToast } from "@/composables/useToast";
 import { errorMessage } from "@/utils/error";
-import AppCard from "@/components/ui/AppCard.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppIcon from "@/components/ui/AppIcon.vue";
-import AppSpinner from "@/components/ui/AppSpinner.vue";
 import AppErrorState from "@/components/ui/AppErrorState.vue";
 import MemberCountersignModal from "@/components/activity/MemberCountersignModal.vue";
 

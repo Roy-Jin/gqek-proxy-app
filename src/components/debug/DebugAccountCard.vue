@@ -1,7 +1,7 @@
 <template>
-  <AppCard class="mb-4">
-    <p class="text-sm font-medium text-gray-700 mb-3">当前账号</p>
-    <div class="space-y-1.5 text-sm text-gray-600">
+  <section class="mb-4 rounded-lg bg-surface-low p-4">
+    <h3 class="mb-3 text-base font-medium text-on-surface">当前账号</h3>
+    <div class="space-y-1.5 text-sm text-on-surface-variant">
       <p>姓名：{{ text(auth.user?.nickName) }}</p>
       <p>学号：{{ text(auth.user?.userName) }}</p>
       <p>ID：{{ text(auth.user?.userId) }}</p>
@@ -11,37 +11,35 @@
       <p>已保存账号：{{ accounts.accounts.length }} 个</p>
     </div>
     <div class="mt-3 flex flex-wrap gap-2">
-      <AppButton variant="secondary" size="sm" @click="exportKey">
+      <VarButton type="primary" tonal size="small" @click="exportKey">
         复制当前密钥
-      </AppButton>
-      <AppButton variant="secondary" size="sm" @click="shareTempKey">
+      </VarButton>
+      <VarButton type="primary" tonal size="small" @click="shareTempKey">
         生成临时密钥（10 分钟）
-      </AppButton>
+      </VarButton>
     </div>
     <p
       v-if="tempKey"
-      class="mt-2 rounded-lg bg-gray-50 p-2 text-xs text-gray-600 break-all select-all"
+      class="mt-3 select-all break-all rounded-md bg-surface-high p-3 font-mono text-xs text-on-surface-variant"
     >{{ tempKey }}</p>
-    <p v-if="tempKey" class="mt-1 text-xs text-gray-400">
+    <p v-if="tempKey" class="mt-1 text-xs text-on-surface-variant">
       有效期至 {{ tempKeyExpiry }}，仅在当前页面内存中保留
     </p>
-  </AppCard>
+  </section>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { Button as VarButton } from "@varlet/ui";
 import { useAccountsStore } from "@/stores/accounts";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";
 import { createTempKey } from "@/utils/tempKey";
-import AppCard from "@/components/ui/AppCard.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 
 const auth = useGlobal();
 const accounts = useAccountsStore();
 const toast = useToast();
 
-/** Temp key shown on screen only; never persisted, never logged. */
 const tempKey = ref("");
 const tempKeyExpiry = ref("");
 

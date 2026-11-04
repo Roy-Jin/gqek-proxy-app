@@ -1,10 +1,10 @@
 <template>
-  <ToastHost />
   <UpdateDialog />
 
   <!-- Boot: validating saved token -->
-  <div v-if="!authChecked" class="flex-1 flex items-center justify-center">
-    <AppSpinner text="正在验证登录状态..." />
+  <div v-if="!authChecked" class="flex-1 flex flex-col items-center justify-center gap-4">
+    <VarLoading type="circle" color="var(--md-primary)" />
+    <p class="text-sm text-on-surface-variant">正在验证登录状态...</p>
   </div>
 
   <!-- No valid token: login page -->
@@ -12,53 +12,61 @@
 
   <!-- Authed: mobile app layout -->
   <div v-else class="flex flex-col flex-1 min-h-0">
-    <header
-      class="shrink-0 relative flex items-center justify-center px-4 bg-white border-b border-gray-100"
-      style="height: calc(3rem + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top)"
+    <VarAppBar
+      class="app-bar"
+      type="surface"
+      :title-position="isSubpage ? 'left' : 'center'"
+      :title="headerTitle"
+      :fixed="false"
+      :border="false"
+      :elevation="0"
+      safe-area-top
     >
-      <button
-        v-if="isSubpage"
-        type="button"
-        class="absolute left-1 bottom-0 h-12 inline-flex items-center gap-0.5 px-2 text-sm text-gray-500 rounded-lg transition-colors hover:bg-gray-100"
-        @click="back"
-      >
-        <AppIcon name="chevron-right" class="h-4 w-4 rotate-180" />
-        返回
-      </button>
-      <div class="flex items-center gap-2 min-w-0">
-        <div v-if="!isSubpage" class="h-6 w-6 rounded-md bg-primary text-white grid place-items-center text-xs font-bold">{{ env.app.logoText }}</div>
-        <span class="text-sm font-semibold text-gray-900 truncate">{{ headerTitle }}</span>
-      </div>
-    </header>
+      <template #left>
+        <VarButton
+          v-if="isSubpage"
+          text
+          round
+          icon-container
+          text-color="var(--md-on-surface)"
+          aria-label="返回"
+          @click="back"
+        >
+          <VarIcon name="arrow-left" :size="22" />
+        </VarButton>
+        <div v-else class="app-bar__logo">{{ env.app.logoText }}</div>
+      </template>
+    </VarAppBar>
 
     <main
       class="flex-1 min-h-0 overflow-auto overscroll-contain"
       style="padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right)"
     >
-      <Transition :name="isSubpage ? 'subpage' : 'page'" mode="out-in">
-        <RouterView />
-      </Transition>
+      <RouterView v-slot="{ Component }">
+        <Transition :name="isSubpage ? 'subpage' : 'page'" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </main>
 
-    <nav
+    <VarBottomNavigation
       v-if="!isSubpage"
-      class="shrink-0 bg-white/95 backdrop-blur border-t border-gray-100"
-      style="padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right)"
+      variant
+      class="app-nav"
+      :active="navActive"
+      :animated="true"
+      :bordered="false"
+      safe-area
+      @change="onNavChange"
     >
-      <div class="max-w-md mx-auto flex items-stretch">
-        <RouterLink
-          v-for="item in navItems"
-          :key="item.path"
-          :to="item.path"
-          replace
-          class="flex-1 flex flex-col items-center gap-0.5 py-2 text-xs transition-colors"
-          :class="isActive(item.path) ? 'text-primary font-medium' : 'text-gray-400'"
-        >
-          <AppIcon :name="item.icon" class="h-5 w-5" />
-          <span>{{ item.label }}</span>
-        </RouterLink>
-      </div>
-    </nav>
+      <VarBottomNavigationItem
+        v-for="item in navItems"
+        :key="item.name"
+        :name="item.name"
+        :icon="item.icon"
+        :label="item.label"
+      />
+    </VarBottomNavigation>
   </div>
 </template>
 
@@ -66,6 +74,14 @@
 import { computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
+import {
+  AppBar as VarAppBar,
+  BottomNavigation as VarBottomNavigation,
+  BottomNavigationItem as VarBottomNavigationItem,
+  Button as VarButton,
+  Icon as VarIcon,
+  Loading as VarLoading,
+} from "@varlet/ui";
 import { getInfo } from "@/api";
 import { useAccountSession, toUserBrief } from "@/composables/useAccountSession";
 import { useAppUpdate } from "@/composables/useAppUpdate";
@@ -74,9 +90,6 @@ import { useGlobal } from "@/stores/global";
 import { useUpdateStore } from "@/stores/update";
 import LoginPanel from "@/components/auth/LoginPanel.vue";
 import UpdateDialog from "@/components/update/UpdateDialog.vue";
-import AppIcon from "@/components/ui/AppIcon.vue";
-import AppSpinner from "@/components/ui/AppSpinner.vue";
-import ToastHost from "@/components/ui/ToastHost.vue";
 
 const auth = useGlobal();
 const env = useEnvStore();
@@ -106,13 +119,18 @@ function back() {
 }
 
 const navItems = [
-  { path: "/activity", label: "活动", icon: "flag" },
-  { path: "/todo", label: "待办", icon: "list" },
-  { path: "/about", label: "关于", icon: "info" },
+  { name: "activity", path: "/activity", label: "活动", icon: "calendar-month-outline" },
+  { name: "todo", path: "/todo", label: "待办", icon: "format-list-checkbox" },
+  { name: "about", path: "/about", label: "关于", icon: "information-outline" },
 ];
 
-function isActive(path: string) {
-  return route.path.startsWith(path);
+const navActive = computed(
+  () => navItems.find((item) => route.path.startsWith(item.path))?.name ?? "activity"
+);
+
+function onNavChange(name: string | number) {
+  const item = navItems.find((entry) => entry.name === name);
+  if (item) router.replace(item.path);
 }
 
 /** Validate saved token on boot; fall back to login when invalid */
@@ -156,10 +174,36 @@ onMounted(() => {
 });
 </script>
 
-<style>
+<style scoped>
+.app-bar {
+  --app-bar-surface-color: var(--md-surface);
+  --app-bar-surface-text-color: var(--md-on-surface);
+  --app-bar-title-font-size: 20px;
+  --app-bar-title-font-weight: 500;
+}
+
+.app-bar__logo {
+  height: 1.5rem;
+  width: 1.5rem;
+  border-radius: 0.5rem;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.app-nav {
+  --bottom-navigation-background-color: var(--md-surface-container);
+  --bottom-navigation-item-variant-active-background-color: var(--md-secondary-container);
+  --bottom-navigation-item-variant-active-color: var(--md-on-surface);
+  --bottom-navigation-item-inactive-color: var(--md-on-surface-variant);
+}
+
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--md-motion-base) var(--md-ease-standard);
 }
 .page-enter-from,
 .page-leave-to {
@@ -167,14 +211,16 @@ onMounted(() => {
 }
 
 .subpage-enter-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity var(--md-motion-slow) var(--md-ease-standard),
+    transform var(--md-motion-slow) var(--md-ease-standard);
 }
 .subpage-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--md-motion-fast) var(--md-ease-standard);
 }
 .subpage-enter-from {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(12px);
 }
 .subpage-leave-to {
   opacity: 0;

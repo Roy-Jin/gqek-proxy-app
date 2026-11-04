@@ -1,108 +1,133 @@
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-    <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
+  <div class="p-4 max-w-3xl mx-auto">
+    <div class="flex items-start justify-between gap-3">
       <div>
-        <h2 class="text-lg font-semibold text-gray-900">我的待办</h2>
-        <p class="mt-0.5 text-sm text-gray-500">跟踪需要处理的消息</p>
+        <h2 class="text-[22px] leading-7 font-medium text-on-surface">待办</h2>
+        <p class="mt-1 text-sm text-on-surface-variant">跟踪需要处理的消息</p>
       </div>
-      <AppButton variant="secondary" size="sm" :loading="loading" @click="refresh">
-        <AppIcon name="refresh" class="h-4 w-4" />
+      <VarButton text type="primary" size="small" :loading="loading" @click="refresh">
+        <VarIcon name="refresh" :size="18" class="mr-1" />
         刷新
-      </AppButton>
+      </VarButton>
     </div>
 
-    <AppSegmentedTabs :items="tabs" :active="activeTab" @change="switchTab" />
+    <AppSegmented class="mt-4" :items="tabs" :active="activeTab" @change="switchTab" />
 
     <!-- Approval action bar -->
     <div v-if="activeTab === 0 && selectedIds.length > 0" class="sticky bottom-2 z-10 mt-4">
-      <div class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-100 shadow-lg">
-        <button type="button" class="flex items-center gap-1.5 text-sm text-gray-600 select-none" @click="toggleSelectAll">
-          <AppCheckCircle :checked="allSelected" />
-          全选
-        </button>
-        <span class="text-sm text-gray-500">已选 <span class="font-semibold text-primary-fg">{{ selectedIds.length }}</span> 项</span>
+      <div class="flex items-center gap-3 p-3 bg-surface-high rounded-lg shadow-e2">
+        <VarCheckbox
+          class="shrink-0"
+          :model-value="allSelected"
+          @change="toggleSelectAll"
+        >
+          <span class="text-sm text-on-surface-variant">全选</span>
+        </VarCheckbox>
+        <span class="text-sm text-on-surface-variant">已选 <span class="font-semibold text-primary">{{ selectedIds.length }}</span> 项</span>
         <span class="flex-1"></span>
-        <AppButton variant="secondary" size="sm" @click="clearSelection">取消</AppButton>
-        <AppButton variant="primary" size="sm" :loading="approving" @click="runAudit(1)">通过</AppButton>
-        <AppButton variant="danger" size="sm" @click="showRejectConfirm = true">驳回</AppButton>
+        <VarButton type="primary" tonal size="small" @click="clearSelection">取消</VarButton>
+        <VarButton type="primary" size="small" :loading="approving" @click="runAudit(1)">通过</VarButton>
+        <VarButton type="danger" size="small" @click="showRejectConfirm = true">驳回</VarButton>
       </div>
     </div>
 
-    <AppCard :padding="false">
+    <div class="mt-4 bg-surface-low rounded-lg overflow-hidden">
       <!-- Loading skeleton -->
-      <div v-if="loading && rows.length === 0" class="divide-y divide-gray-100">
-        <AppSkeletonRows />
+      <div v-if="loading && rows.length === 0" class="divide-y divide-outline-variant">
+        <div v-for="i in 5" :key="i" class="animate-pulse space-y-2 p-4">
+          <div class="h-3.5 w-1/4 rounded bg-surface-highest"></div>
+          <div class="h-3 w-3/4 rounded bg-surface-high"></div>
+          <div class="h-3 w-1/2 rounded bg-surface-high"></div>
+        </div>
       </div>
 
       <!-- Message list -->
-      <ul v-else-if="rows.length > 0" class="divide-y divide-gray-100">
+      <ul v-else-if="rows.length > 0" class="divide-y divide-outline-variant">
         <li
           v-for="row in rows"
           :key="row.businessId"
-          class="px-4 sm:px-5 py-3.5 transition-colors flex gap-3"
-          :class="[activeTab === 0 && selectedIds.includes(row.businessId) ? 'bg-primary-soft' : 'hover:bg-gray-50', activeTab === 0 ? 'cursor-pointer' : '']"
+          v-ripple="{ disabled: activeTab !== 0 }"
+          class="px-4 py-3.5 flex gap-3"
+          :class="[
+            activeTab === 0 && selectedIds.includes(row.businessId) ? 'bg-primary-container' : '',
+            activeTab === 0 ? 'cursor-pointer' : '',
+          ]"
           @click="activeTab === 0 && toggleSelect(row.businessId)"
         >
-          <label v-if="activeTab === 0" class="shrink-0 mt-0.5 cursor-pointer select-none" @click.stop>
-            <input
-              type="checkbox"
-              class="sr-only"
-              :checked="selectedIds.includes(row.businessId)"
+          <div v-if="activeTab === 0" class="shrink-0 mt-0.5" @click.stop>
+            <VarCheckbox
+              :model-value="selectedIds.includes(row.businessId)"
               @change="toggleSelect(row.businessId)"
             />
-            <AppCheckCircle :checked="selectedIds.includes(row.businessId)" />
-          </label>
+          </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-baseline justify-between gap-2">
-              <p class="text-sm font-medium text-gray-900 truncate">{{ row.fromUserName }}</p>
-              <span class="shrink-0 text-xs text-gray-400">{{ row.createTime }}</span>
+              <p class="text-sm font-medium text-on-surface truncate">{{ row.fromUserName }}</p>
+              <span class="shrink-0 text-xs text-on-surface-variant">{{ row.createTime }}</span>
             </div>
-            <p class="mt-0.5 text-sm text-gray-700 truncate">{{ row.messageTitle }}</p>
-            <p class="mt-0.5 text-xs text-gray-500 line-clamp-2">{{ row.messageContent }}</p>
+            <p class="mt-0.5 text-sm text-on-surface truncate">{{ row.messageTitle }}</p>
+            <p class="mt-0.5 text-xs text-on-surface-variant line-clamp-2">{{ row.messageContent }}</p>
           </div>
         </li>
       </ul>
 
       <AppEmpty v-else-if="!loading" text="暂无待办消息" />
-    </AppCard>
+    </div>
 
-    <AppPagination
-      v-if="total > 0"
-      :page="pageNum"
-      :total="total"
-      :page-size="pageSize"
-      :loading="loading"
-      @change="changePage"
-    />
+    <div v-if="total > 0" class="mt-4 flex items-center justify-between gap-3">
+      <p class="text-sm text-on-surface-variant">
+        共 <span class="font-medium text-on-surface">{{ total }}</span> 条
+      </p>
+      <VarPagination
+        :current="pageNum"
+        :size="pageSize"
+        :total="total"
+        simple
+        @change="changePage"
+      />
+    </div>
 
-    <p v-if="errorMsg" class="mt-4 text-sm text-red-600">{{ errorMsg }}</p>
+    <p v-if="errorMsg" class="mt-4 text-sm text-error">{{ errorMsg }}</p>
 
-    <AppModal :open="showRejectConfirm" title="驳回确认" @close="showRejectConfirm = false">
-      <p class="mt-2 text-sm text-gray-500 text-center">确定驳回所选 {{ selectedIds.length }} 项吗？</p>
-      <div class="mt-4 flex gap-2">
-        <AppButton variant="secondary" class="flex-1" @click="showRejectConfirm = false">取消</AppButton>
-        <AppButton variant="danger" class="flex-1" :loading="approving" @click="confirmReject">确认驳回</AppButton>
-      </div>
-    </AppModal>
+    <VarDialog
+      v-model:show="showRejectConfirm"
+      title="驳回确认"
+      message-align="center"
+      width="86vw"
+      :dialog-style="{ maxWidth: '20rem' }"
+      close-on-click-overlay
+    >
+      <p class="text-sm text-on-surface-variant">确定驳回所选 {{ selectedIds.length }} 项吗？</p>
+      <template #actions>
+        <div class="flex w-full gap-2 px-6 pb-6">
+          <VarButton class="flex-1" type="primary" tonal @click="showRejectConfirm = false">取消</VarButton>
+          <VarButton class="flex-1" type="danger" :loading="approving" @click="confirmReject">确认驳回</VarButton>
+        </div>
+      </template>
+    </VarDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import {
+  Button as VarButton,
+  Checkbox as VarCheckbox,
+  Dialog,
+  Icon as VarIcon,
+  Pagination as VarPagination,
+  Ripple as vRipple,
+} from "@varlet/ui";
 import { listTodoApp, auditInfo } from "@/api";
 import type { TodoMessage } from "@/api";
 import { useToast } from "@/composables/useToast";
 import { useMultiSelect } from "@/composables/useMultiSelect";
 import { errorMessage } from "@/utils/error";
-import AppIcon from "@/components/ui/AppIcon.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppCard from "@/components/ui/AppCard.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
-import AppModal from "@/components/ui/AppModal.vue";
-import AppPagination from "@/components/ui/AppPagination.vue";
-import AppSegmentedTabs from "@/components/ui/AppSegmentedTabs.vue";
-import AppCheckCircle from "@/components/ui/AppCheckCircle.vue";
-import AppSkeletonRows from "@/components/ui/AppSkeletonRows.vue";
+import AppSegmented from "@/components/ui/AppSegmented.vue";
+
+// `Dialog` is Varlet's imperative API; the render component lives on `.Component`
+const VarDialog = Dialog.Component;
 
 const pageSize = 10;
 const pageNum = ref(1);

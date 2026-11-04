@@ -1,20 +1,17 @@
 <script setup lang="ts">
-import AppCard from "./AppCard.vue";
-import AppButton from "./AppButton.vue";
-import AppIcon from "./AppIcon.vue";
+import { Icon as VarIcon, Button as VarButton } from "@varlet/ui";
 
 defineProps<{ message: string }>();
 const emit = defineEmits<{ retry: [] }>();
 </script>
 
 <template>
-  <AppCard class="text-center">
-    <div class="flex flex-col items-center gap-3 text-gray-500">
-      <p class="text-sm">{{ message }}</p>
-      <AppButton variant="secondary" size="sm" @click="emit('retry')">
-        <AppIcon name="refresh" class="h-4 w-4" />
-        重试
-      </AppButton>
-    </div>
-  </AppCard>
+  <div class="flex flex-col items-center gap-3 rounded-lg bg-error-container px-4 py-8 text-center">
+    <VarIcon name="alert-circle-outline" :size="28" class="text-on-error-container" />
+    <p class="text-sm text-on-error-container">{{ message }}</p>
+    <VarButton size="small" text text-color="var(--md-on-error-container)" @click="emit('retry')">
+      <VarIcon name="refresh" :size="16" />
+      重试
+    </VarButton>
+  </div>
 </template>
