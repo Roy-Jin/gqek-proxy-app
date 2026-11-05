@@ -237,6 +237,40 @@ export function signFlagChange(params: SignFlagChangeParams, opts?: RequestOptio
   );
 }
 
+/* ==================== Sign QR code ==================== */
+
+/** QR image descriptor returned by the sign QR endpoint */
+export interface SignQrMap {
+  fileName: string;
+  ossId: string;
+  url: string;
+  [key: string]: unknown;
+}
+
+/** Sign QR payload: activity stats plus the shared sign-in / sign-out QR image */
+export interface SignQrCodeData {
+  activityId: string;
+  sumNum: number;
+  signNum: number;
+  signOutNum: number;
+  qrMap: SignQrMap | null;
+  [key: string]: unknown;
+}
+
+export type SignQrCodeResult = ApiResult<SignQrCodeData>;
+
+/**
+ * Get the activity sign-in / sign-out QR code
+ * GET /activitiy/sign/qrCode/{activityId}
+ */
+export function getSignQrCode(activityId: string, opts?: RequestOptions) {
+  return http.get<SignQrCodeResult>(
+    `/activitiy/sign/qrCode/${activityId}`,
+    undefined,
+    opts
+  );
+}
+
 /* ==================== Member management / countersign ==================== */
 
 /** Activity member list query params */

@@ -8,137 +8,135 @@
     <AppErrorState v-else-if="errorMsg" :message="errorMsg" @retry="fetchDetail" />
 
     <template v-else-if="detail">
-      <!-- Cover -->
-      <div class="rounded-2xl overflow-hidden bg-primary-container w-40 sm:w-56 mx-auto">
-        <img v-if="hasCover" :src="cover" :alt="detail.activityName" class="w-full aspect-square object-cover"
-          referrerpolicy="no-referrer" @error="onImgError" />
-        <div v-else class="w-full aspect-square grid place-items-center text-on-primary-container">
-          <VarIcon name="image-outline" :size="32" class="opacity-60" />
-        </div>
-      </div>
+      <!-- Hero card: cover image with overlaid title -->
+      <VarCard class="hero-card" :elevation="false">
+        <template #image>
+          <div class="relative h-48 w-full overflow-hidden sm:h-60">
+            <img v-if="hasCover" :src="cover" :alt="detail.activityName" class="h-full w-full object-cover"
+              referrerpolicy="no-referrer" @error="onImgError" />
+            <div v-else class="grid h-full w-full place-items-center bg-linear-to-br from-primary to-inverse-surface">
+              <VarIcon name="image-outline" :size="48" class="text-white/30" />
+            </div>
 
-      <!-- Title header -->
-      <VarPaper class="p-4 mt-4" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
-        <div class="flex items-start justify-between gap-3">
-          <h3 class="text-base font-semibold text-on-surface">{{ detail.activityName }}</h3>
-          <span class="shrink-0 px-2 py-0.5 text-xs rounded bg-surface-high text-on-surface-variant">{{
-            activityStatusLabel(detail.status) }}</span>
-        </div>
-        <div class="mt-2 flex items-center gap-2 flex-wrap">
-          <span class="px-2 py-0.5 text-xs rounded-md bg-primary-container text-on-primary-container">{{
-            detail.activityClassifyName }}</span>
+            <div class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/75 via-black/25 to-transparent">
+            </div>
+
+            <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-5">
+              <div class="min-w-0">
+                <h1 class="text-xl font-semibold leading-snug text-white line-clamp-2 sm:text-2xl">
+                  {{ detail.activityName }}
+                </h1>
+                <p class="mt-1.5 truncate text-sm text-white/75">{{ detail.maintainerName || '—' }}</p>
+              </div>
+              <VarChip class="shrink-0" :type="statusChipType" size="small">
+                {{ activityStatusLabel(detail.status) }}
+              </VarChip>
+            </div>
+          </div>
+        </template>
+
+        <div class="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-5">
+          <VarChip v-if="detail.activityClassifyName" type="primary" plain size="small">
+            {{ detail.activityClassifyName }}
+          </VarChip>
           <span v-if="detail.processName" class="text-xs text-on-surface-variant">{{ detail.processName }}</span>
         </div>
-      </VarPaper>
+      </VarCard>
 
       <!-- Sign in / out -->
-      <VarPaper v-if="showSign" class="p-4 mt-4" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
-        <p class="text-sm font-semibold text-on-surface mb-3">签到管理</p>
-        <div class="flex items-center justify-between py-2">
-          <span class="text-sm text-on-surface">签到</span>
-          <VarSwitch variant :model-value="detail.signFlag === '1'" :disabled="signing" @change="toggleSign" />
-        </div>
-        <div class="flex items-center justify-between py-2 border-t border-outline-variant">
-          <span class="text-sm text-on-surface">签退</span>
-          <VarSwitch variant :model-value="detail.signOutFlag === '1'" :disabled="signing" @change="toggleSignOut" />
-        </div>
-        <button type="button" v-ripple
-          class="w-full flex items-center justify-between py-2.5 border-t border-outline-variant text-sm text-on-surface transition-colors"
-          @click="showMembers = true">
-          <span>成员补签</span>
-          <VarIcon name="chevron-right" :size="16" class="text-on-surface-variant" />
-        </button>
-      </VarPaper>
+      <template v-if="showSign">
+        <div class="section-title">签到管理</div>
+        <VarPaper class="cell-card overflow-hidden" :elevation="0" :radius="20">
+          <VarCell title="签到" icon="account-check-outline" icon-class="text-on-surface-variant" border
+            :border-offset="16">
+            <template #extra>
+              <VarSwitch variant :model-value="detail.signFlag === '1'" :disabled="signing" @change="toggleSign" />
+            </template>
+          </VarCell>
+          <VarCell title="签退" icon="account-arrow-right-outline" icon-class="text-on-surface-variant" border
+            :border-offset="16">
+            <template #extra>
+              <VarSwitch variant :model-value="detail.signOutFlag === '1'" :disabled="signing"
+                @change="toggleSignOut" />
+            </template>
+          </VarCell>
+          <VarCell title="签到签退二维码" description="点击预览二维码，供参与者扫码" icon="qrcode" icon-class="text-on-surface-variant"
+            border :border-offset="16" ripple @click="openSignQr">
+            <template #extra>
+              <VarLoading v-if="qrLoading" type="circle" size="mini" />
+              <VarIcon v-else name="chevron-right" :size="20" class="text-on-surface-variant" />
+            </template>
+          </VarCell>
+          <VarCell title="成员补签" description="为未签到、未签退的成员补签" icon="account-multiple-plus-outline"
+            icon-class="text-on-surface-variant" ripple @click="showMembers = true">
+            <template #extra>
+              <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+            </template>
+          </VarCell>
+        </VarPaper>
+      </template>
 
       <!-- Basic info -->
-      <VarPaper class="p-4 mt-4" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
-        <p class="text-sm font-semibold text-on-surface mb-3">基本信息</p>
-        <dl class="space-y-3 text-sm">
-          <div class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">主办方</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.maintainerName || '—' }}</dd>
+      <div class="section-title">基本信息</div>
+      <VarPaper class="surface-card overflow-hidden" :elevation="0" :radius="20">
+        <div class="grid grid-cols-2 gap-x-4 gap-y-5 p-4 sm:p-5">
+          <div v-for="item in basicInfo" :key="item.label" class="min-w-0">
+            <p class="text-xs text-on-surface-variant">{{ item.label }}</p>
+            <p class="mt-1.5 text-sm font-medium text-on-surface wrap-break-word">{{ item.value }}</p>
           </div>
-          <div v-if="detail.studentName" class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">负责人</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">
-              {{ detail.studentName }}<template v-if="detail.studentPhone"> · {{ detail.studentPhone }}</template>
-            </dd>
-          </div>
-          <div v-if="type === 'volunteer' && duration" class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">活动时长</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ duration }} 小时</dd>
-          </div>
-          <div class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">参与人数</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">
-              {{ detail.memberNum }}<template v-if="limitPeople">/{{ limitPeople }}</template> 人
-            </dd>
-          </div>
-          <div v-if="detail.fund" class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">活动经费</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.fund }} 元</dd>
-          </div>
-        </dl>
+        </div>
       </VarPaper>
 
       <!-- Time & location -->
-      <VarPaper class="p-4 mt-4" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
-        <p class="text-sm font-semibold text-on-surface mb-3">时间与地点</p>
-        <dl class="space-y-3 text-sm">
-          <div class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">活动时间</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.activityStartTime }} ~ {{
-              detail.activityEndTime
-              }}</dd>
+      <div class="section-title">时间与地点</div>
+      <VarPaper class="surface-card overflow-hidden" :elevation="0" :radius="20">
+        <div class="divide-y divide-outline-variant">
+          <div v-for="item in timeInfo" :key="item.label" class="flex items-start gap-3 px-4 py-4 sm:px-5">
+            <VarIcon :name="item.icon" :size="20" class="mt-0.5 shrink-0 text-on-surface-variant" />
+            <div class="min-w-0 flex-1">
+              <p class="text-xs text-on-surface-variant">{{ item.label }}</p>
+              <p class="mt-1 text-sm font-medium text-on-surface wrap-break-word">{{ item.value }}</p>
+            </div>
           </div>
-          <div class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">报名时间</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.registerStartTime }} ~ {{
-              detail.registerEndTime
-              }}</dd>
-          </div>
-          <div class="flex">
-            <dt class="w-24 shrink-0 text-on-surface-variant">活动地点</dt>
-            <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.activityLocation || '—' }}</dd>
-          </div>
-        </dl>
-      </VarPaper>
-
-      <!-- Teachers -->
-      <VarPaper v-if="teachers.length" class="p-4 mt-4" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
-        <p class="text-sm font-semibold text-on-surface mb-3">指导老师</p>
-        <ul class="space-y-2">
-          <li v-for="(t, i) in teachers" :key="i"
-            class="text-sm text-on-surface flex items-center justify-between gap-2">
-            <span>{{ t.name }}</span>
-            <span class="text-on-surface-variant text-xs shrink-0">{{ t.detail }}</span>
-          </li>
-        </ul>
-      </VarPaper>
-
-      <!-- Class hours -->
-      <VarPaper v-if="classHours.length" class="p-4 mt-4" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
-        <p class="text-sm font-semibold text-on-surface mb-3">学时明细</p>
-        <div class="flex flex-wrap gap-2">
-          <span v-for="(h, i) in classHours" :key="i"
-            class="px-2.5 py-1 text-xs rounded-lg bg-surface-high text-on-surface">{{ h }} 小时</span>
         </div>
       </VarPaper>
 
+      <!-- Teachers -->
+      <template v-if="teachers.length">
+        <div class="section-title">指导老师</div>
+        <VarPaper class="surface-card overflow-hidden" :elevation="0" :radius="20">
+          <div class="divide-y divide-outline-variant">
+            <div v-for="(t, i) in teachers" :key="i"
+              class="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
+              <div class="flex min-w-0 items-center gap-3">
+                <VarIcon name="school-outline" :size="20" class="shrink-0 text-on-surface-variant" />
+                <span class="truncate text-sm text-on-surface">{{ t.name }}</span>
+              </div>
+              <span class="shrink-0 text-xs text-on-surface-variant">{{ t.detail || '—' }}</span>
+            </div>
+          </div>
+        </VarPaper>
+      </template>
+
+      <!-- Class hours -->
+      <template v-if="classHours.length">
+        <div class="section-title">学时明细</div>
+        <VarPaper class="surface-card" :elevation="0" :radius="20">
+          <div class="flex flex-wrap gap-2 p-4 sm:p-5">
+            <VarChip v-for="(h, i) in classHours" :key="i" type="primary" plain size="small">{{ h }} 小时</VarChip>
+          </div>
+        </VarPaper>
+      </template>
+
       <!-- Description -->
-      <VarPaper v-if="detail.content || detail.purpose" class="p-4 mt-4" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
-        <p class="text-sm font-semibold text-on-surface mb-3">活动说明</p>
-        <p class="text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-all">
-          {{ detail.content || detail.purpose }}
-        </p>
-      </VarPaper>
+      <template v-if="detail.content || detail.purpose">
+        <div class="section-title">活动说明</div>
+        <VarPaper class="surface-card" :elevation="0" :radius="20">
+          <p class="p-4 text-sm leading-relaxed text-on-surface whitespace-pre-wrap wrap-break-word sm:p-5">
+            {{ detail.content || detail.purpose }}
+          </p>
+        </VarPaper>
+      </template>
     </template>
 
     <MemberCountersignModal :open="showMembers" :activity-id="id" @close="showMembers = false" />
@@ -149,8 +147,17 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { definePage } from "vue-router/experimental";
-import { Icon as VarIcon, Loading as VarLoading, Paper as VarPaper, Switch as VarSwitch, Ripple as vRipple } from "@varlet/ui";
-import { getActivityDetail, getVolunteerActivityDetail, signFlagChange, activityStatusLabel } from "@/api";
+import {
+  Card as VarCard,
+  Cell as VarCell,
+  Chip as VarChip,
+  Icon as VarIcon,
+  ImagePreview,
+  Loading as VarLoading,
+  Paper as VarPaper,
+  Switch as VarSwitch,
+} from "@varlet/ui";
+import { getActivityDetail, getVolunteerActivityDetail, getSignQrCode, signFlagChange, activityStatusLabel } from "@/api";
 import type { ActivityDetail } from "@/api";
 import { useToast } from "@/composables/useToast";
 import { errorMessage } from "@/utils/error";
@@ -158,6 +165,14 @@ import AppErrorState from "@/components/ui/AppErrorState.vue";
 import MemberCountersignModal from "@/components/activity/MemberCountersignModal.vue";
 
 definePage({ meta: { title: "活动详情" } });
+
+type ChipType = "default" | "primary" | "info" | "success" | "warning" | "danger";
+
+interface InfoItem {
+  label: string;
+  value: string;
+  icon?: string;
+}
 
 const route = useRoute();
 const toast = useToast();
@@ -176,11 +191,56 @@ const hasCover = computed(() => !!(cover.value && !imgError.value));
 const duration = computed(() => detail.value?.serviceTime || detail.value?.attendTime || "");
 const limitPeople = computed(() => detail.value?.activitiyLimitInfoVo?.limitPeople ?? null);
 
+const statusChipType = computed<ChipType>(() => {
+  const status = detail.value?.status ?? 0;
+  if (status === 10) return "success";
+  if (status === 5) return "primary";
+  if (status === 1 || status === 6 || status === 7) return "warning";
+  if (status >= 2 && status <= 4) return "info";
+  return "default";
+});
+
+const basicInfo = computed<InfoItem[]>(() => {
+  const d = detail.value;
+  if (!d) return [];
+  const rows: InfoItem[] = [
+    { label: "主办方", value: d.maintainerName || "—" },
+  ];
+  if (d.studentName) {
+    rows.push({
+      label: "负责人",
+      value: [d.studentName, d.studentPhone].filter(Boolean).join(" · "),
+    });
+  }
+  if (type === "volunteer" && duration.value) {
+    rows.push({ label: "活动时长", value: `${duration.value} 小时` });
+  }
+  rows.push({
+    label: "参与人数",
+    value: `${d.memberNum}${limitPeople.value ? `/${limitPeople.value}` : ""} 人`,
+  });
+  if (d.fund) {
+    rows.push({ label: "活动经费", value: `${d.fund} 元` });
+  }
+  return rows;
+});
+
+const timeInfo = computed<InfoItem[]>(() => {
+  const d = detail.value;
+  if (!d) return [];
+  return [
+    { label: "活动时间", icon: "calendar-clock-outline", value: `${d.activityStartTime} ~ ${d.activityEndTime}` },
+    { label: "报名时间", icon: "calendar-month-outline", value: `${d.registerStartTime} ~ ${d.registerEndTime}` },
+    { label: "活动地点", icon: "map-marker-outline", value: d.activityLocation || "—" },
+  ];
+});
+
 function onImgError() {
   imgError.value = true;
 }
 
 const signing = ref(false);
+const qrLoading = ref(false);
 const showMembers = ref(false);
 const started = computed(() => {
   const t = detail.value?.activityStartTime;
@@ -217,6 +277,22 @@ function toggleSignOut() {
   if (!detail.value) return;
   const next = detail.value.signOutFlag === "1" ? "0" : "1";
   changeSign(next === "1" ? "0" : (detail.value.signFlag ?? "0"), next);
+}
+
+async function openSignQr() {
+  if (qrLoading.value) return;
+  qrLoading.value = true;
+  try {
+    const body = (await getSignQrCode(id)).data;
+    if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
+    const url = body.data?.qrMap?.url;
+    if (!url) throw new Error("暂未获取到二维码");
+    ImagePreview({ images: [url], zoom: 0.8 });
+  } catch (e) {
+    toast.error(errorMessage(e));
+  } finally {
+    qrLoading.value = false;
+  }
 }
 
 const teachers = computed(() =>
@@ -259,3 +335,50 @@ async function fetchDetail() {
 
 onMounted(fetchDetail);
 </script>
+
+<style scoped>
+/* Varlet Card tuned to the app surface tokens */
+.hero-card {
+  --card-background: var(--md-surface-container);
+  --card-border-radius: 20px;
+  --card-padding: 0;
+  --card-content-padding: 0;
+  --card-content-margin: 0;
+  --card-line-height: 1.5;
+}
+
+.surface-card {
+  --paper-background: var(--md-surface-container);
+}
+
+/* Cell list inside the sign card */
+.cell-card {
+  --paper-background: var(--md-surface-container);
+  --cell-color: var(--md-on-surface);
+  --cell-description-color: var(--md-on-surface-variant);
+  --cell-font-size: 14px;
+  --cell-padding: 14px 16px;
+  --cell-border-color: var(--md-outline-variant);
+  --cell-icon-right: 12px;
+  --cell-extra-left: 12px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 10px;
+  padding: 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+
+.section-title::before {
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--md-primary);
+}
+</style>
