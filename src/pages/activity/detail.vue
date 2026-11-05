@@ -1,4 +1,12 @@
 <template>
+  <!-- Header action lives in the app bar but stays owned by this page -->
+  <Teleport to="#app-bar-action">
+    <VarButton v-if="detail" text round icon-container text-color="var(--md-on-surface)" aria-label="活动二维码" class="mr-2"
+      @click="openActivityQr">
+      <QrCode :size="20" />
+    </VarButton>
+  </Teleport>
+
   <div class="p-4 sm:p-6 max-w-2xl mx-auto">
     <div v-if="loading && !detail" class="flex flex-col items-center justify-center py-16 gap-4">
       <VarLoading type="circle" color="var(--md-primary)" />
@@ -42,29 +50,35 @@
         </div>
       </VarCard>
 
+      <!-- Member management -->
+      <div class="section-title">成员管理</div>
+      <VarPaper class="cell-card overflow-hidden" :elevation="0" :radius="20">
+        <VarCell title="活动成员" :description="memberDescription" border :border-offset="16" ripple
+          @click="showMemberManage = true">
+          <template #icon>
+            <span class="var-cell__icon text-on-surface-variant">
+              <UsersRound :size="20" />
+            </span>
+          </template>
+          <template #extra>
+            <ChevronRight :size="20" class="text-on-surface-variant" />
+          </template>
+        </VarCell>
+      </VarPaper>
+
       <!-- Sign in / out -->
       <template v-if="showSign">
         <div class="section-title">签到管理</div>
         <VarPaper class="cell-card overflow-hidden" :elevation="0" :radius="20">
-          <VarCell title="签到" border :border-offset="16">
+          <VarCell title="签到签退" description="开启签到或签退功能" border :border-offset="16">
             <template #icon>
               <span class="var-cell__icon text-on-surface-variant">
                 <UserCheck :size="20" />
               </span>
             </template>
             <template #extra>
-              <VarSwitch variant :model-value="detail.signFlag === '1'" :disabled="signing" @change="toggleSign" />
-            </template>
-          </VarCell>
-          <VarCell title="签退" border :border-offset="16">
-            <template #icon>
-              <span class="var-cell__icon text-on-surface-variant">
-                <LogOut :size="20" />
-              </span>
-            </template>
-            <template #extra>
-              <VarSwitch variant :model-value="detail.signOutFlag === '1'" :disabled="signing"
-                @change="toggleSignOut" />
+              <VarSelect class="w-26" size="small" variant="outlined" :hint="false" :model-value="signMode"
+                :options="signModeOptions" :disabled="signing" @change="onSignModeChange" />
             </template>
           </VarCell>
           <VarCell title="签到签退二维码" description="点击预览二维码，供参与者扫码" border :border-offset="16" ripple @click="openSignQr">
@@ -155,6 +169,9 @@
     </template>
 
     <MemberCountersignModal :open="showMembers" :activity-id="id" @close="showMembers = false" />
+    <MemberManageModal :open="showMemberManage" :activity-id="id" :manageable="canManageMembers"
+      :admin-name="detail?.studentName" :admin-phone="detail?.studentPhone" @close="showMemberManage = false"
+      @changed="fetchDetail" />
   </div>
 </template>
 
@@ -162,16 +179,18 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { definePage } from "vue-router/experimental";
-import { CalendarClock, CalendarDays, ChevronRight, GraduationCap, Image, LogOut, MapPin, QrCode, UserCheck, UserRoundPlus } from "@lucide/vue";
+import { CalendarClock, CalendarDays, ChevronRight, GraduationCap, Image, MapPin, QrCode, UserCheck, UserRoundPlus, UsersRound } from "@lucide/vue";
 import {
+  Button as VarButton,
   Card as VarCard,
   Cell as VarCell,
   Chip as VarChip,
   ImagePreview,
   Loading as VarLoading,
   Paper as VarPaper,
-  Switch as VarSwitch,
+  Select as VarSelect,
 } from "@varlet/ui";
+import encodeQR from "qr";
 import { getActivityDetail, getVolunteerActivityDetail, getSignQrCode, signFlagChange, activityStatusLabel } from "@/api";
 import type { LucideIcon } from "@lucide/vue";
 import type { ActivityDetail } from "@/api";
@@ -179,6 +198,7 @@ import { useToast } from "@/composables/useToast";
 import { errorMessage } from "@/utils/error";
 import AppErrorState from "@/components/ui/AppErrorState.vue";
 import MemberCountersignModal from "@/components/activity/MemberCountersignModal.vue";
+import MemberManageModal from "@/components/activity/MemberManageModal.vue";
 
 definePage({ meta: { title: "活动详情" } });
 
@@ -245,8 +265,8 @@ const timeInfo = computed(() => {
   const d = detail.value;
   if (!d) return [];
   return [
-    { label: "活动时间", icon: CalendarClock, value: [d.activityStartTime, d.activityEndTime] },
-    { label: "报名时间", icon: CalendarDays, value: [d.registerStartTime, d.registerEndTime] },
+    { label: "报名时间", icon: CalendarDays, value: [d.registerStartTime + " ~", d.registerEndTime] },
+    { label: "活动时间", icon: CalendarClock, value: [d.activityStartTime + " ~", d.activityEndTime] },
     { label: "活动地点", icon: MapPin, value: [d.activityLocation || "—"] },
   ];
 });
@@ -257,7 +277,47 @@ function onImgError() {
 
 const signing = ref(false);
 const qrLoading = ref(false);
+// QR preview is only useful while at least one of sign-in / sign-out is enabled
+const qrDisabled = computed(() => {
+  const d = detail.value;
+  if (!d) return true;
+  return (d.signFlag ?? "0") !== "1" && (d.signOutFlag ?? "0") !== "1";
+});
 const showMembers = ref(false);
+const showMemberManage = ref(false);
+
+// Member add/remove is only allowed while the activity is between registration and completion
+const canManageMembers = computed(() => {
+  const status = detail.value?.status ?? 0;
+  return status > 2 && status < 7;
+});
+
+const memberDescription = computed(() => {
+  const count = detail.value?.memberNum ?? 0;
+  return canManageMembers.value ? `共 ${count} 人，可添加或移除成员` : `共 ${count} 人`;
+});
+
+type SignMode = "off" | "sign" | "sign-out";
+
+const signModeOptions = [
+  { label: "关闭", value: "off" },
+  { label: "签到", value: "sign" },
+  { label: "签退", value: "sign-out" },
+];
+
+// Sign-in and sign-out are mutually exclusive, matching the backend toggle behavior
+const signModeFlags: Record<SignMode, [string, string]> = {
+  off: ["0", "0"],
+  sign: ["1", "0"],
+  "sign-out": ["0", "1"],
+};
+
+const signMode = computed<SignMode>(() => {
+  const d = detail.value;
+  if (d?.signFlag === "1") return "sign";
+  if (d?.signOutFlag === "1") return "sign-out";
+  return "off";
+});
 const started = computed(() => {
   const t = detail.value?.activityStartTime;
   if (!t) return false;
@@ -283,20 +343,15 @@ async function changeSign(signFlag: string, signOutFlag: string) {
   }
 }
 
-function toggleSign() {
-  if (!detail.value) return;
-  const next = detail.value.signFlag === "1" ? "0" : "1";
-  changeSign(next, next === "1" ? "0" : (detail.value.signOutFlag ?? "0"));
-}
-
-function toggleSignOut() {
-  if (!detail.value) return;
-  const next = detail.value.signOutFlag === "1" ? "0" : "1";
-  changeSign(next === "1" ? "0" : (detail.value.signFlag ?? "0"), next);
+async function onSignModeChange(value: SignMode) {
+  if (!detail.value || signing.value || value === signMode.value) return;
+  const [signFlag, signOutFlag] = signModeFlags[value];
+  await changeSign(signFlag, signOutFlag);
 }
 
 async function openSignQr() {
   if (qrLoading.value) return;
+  if (qrDisabled.value) return toast.error("请先开启签到或签退功能");
   qrLoading.value = true;
   try {
     const body = (await getSignQrCode(id)).data;
@@ -309,6 +364,14 @@ async function openSignQr() {
   } finally {
     qrLoading.value = false;
   }
+}
+
+// Payload scanned by the native app to open this activity detail page
+const ACTIVITY_QR_URL = "/pages/home/recommendation/eventDetails";
+
+function openActivityQr() {
+  const text = JSON.stringify({ businessId: id, type: 1, content: null, url: ACTIVITY_QR_URL });
+  ImagePreview({ images: [encodeQR(text, "data-url", { scale: 8, border: 2 })], zoom: 0.8 });
 }
 
 const teachers = computed(() =>

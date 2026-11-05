@@ -328,3 +328,38 @@ export function listActivityMembers(params: MemberListParams, opts?: RequestOpti
 export function countersign(params: CountersignParams, opts?: RequestOptions) {
   return http.post<SignFlagChangeResult>("/activitiy/sign/countersign", params, opts);
 }
+
+/* ==================== Member add / remove ==================== */
+
+/** Member entry submitted when adding members */
+export interface AddMemberItem {
+  nickName: string;
+  userId: string;
+}
+
+/** Add members request body */
+export interface AddMembersParams {
+  activityId: string;
+  list: AddMemberItem[];
+  [key: string]: unknown;
+}
+
+/**
+ * Add members to an activity
+ * POST /activity/member/insertByList
+ */
+export function insertActivityMembers(params: AddMembersParams, opts?: RequestOptions) {
+  return http.post<ApiResult<boolean>>("/activity/member/insertByList", params, opts);
+}
+
+/**
+ * Remove one member from an activity
+ * DELETE /activity/member/{userId}/{activityId}
+ */
+export function deleteActivityMember(activityId: string, userId: string, opts?: RequestOptions) {
+  return http.delete<ApiResult>(
+    `/activity/member/${userId}/${activityId}`,
+    undefined,
+    { params: { amount: "" }, ...opts }
+  );
+}

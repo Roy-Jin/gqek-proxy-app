@@ -36,6 +36,11 @@
           <ArrowLeft :size="22" />
         </VarButton>
       </template>
+
+      <!-- Pages mount their own header actions here via Teleport -->
+      <template #right>
+        <div id="app-bar-action" class="flex items-center gap-1"></div>
+      </template>
     </VarAppBar>
 
     <main

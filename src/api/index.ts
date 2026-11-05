@@ -5,3 +5,4 @@ export * from "./modules/audit.js";
 export * from "./modules/auth.js";
 export * from "./modules/message.js";
 export * from "./modules/team.js";
+export * from "./modules/user.js";

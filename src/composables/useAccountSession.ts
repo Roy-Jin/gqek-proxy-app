@@ -26,6 +26,7 @@ export function toUserBrief(info: InfoResult): UserBrief {
     userName: user.userName,
     nickName: user.nickName || "",
     schoolName: user.schoolName || "",
+    schoolId: readString(user.schoolId),
     avatar: user.avatar || "",
     className: readString(user.className),
     userType: readString(user.userType),

@@ -7,6 +7,8 @@ export interface UserBrief {
   /** Student number / account identifier from /getInfo; the only displayed account label */
   nickName: string;
   schoolName: string;
+  /** School id used by school-scoped APIs such as student search */
+  schoolId?: string;
   userId: string;
   avatar?: string;
   className?: string;
