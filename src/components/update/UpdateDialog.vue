@@ -22,7 +22,7 @@
 
     <!-- New version available -->
     <template v-else-if="state === 'available' && release">
-      <div class="rounded-md bg-surface-container px-4 py-3 text-sm">
+      <div class="rounded-md bg-surface-high px-4 py-3 text-sm">
         <div class="flex items-center justify-between gap-2">
           <span class="text-on-surface-variant">当前版本</span>
           <span class="text-on-surface">v{{ currentVersion }}</span>
@@ -39,7 +39,7 @@
       <div v-if="release.notes" class="mt-3">
         <p class="mb-1 text-xs text-on-surface-variant">更新说明</p>
         <div
-          class="max-h-40 overflow-auto overscroll-contain rounded-md bg-surface-container p-3 text-xs leading-relaxed text-on-surface-variant whitespace-pre-wrap wrap-break-word">
+          class="max-h-40 overflow-auto overscroll-contain rounded-md bg-surface-high p-3 text-xs leading-relaxed text-on-surface-variant whitespace-pre-wrap wrap-break-word">
           {{ release.notes }}</div>
       </div>
     </template>

@@ -1,6 +1,5 @@
 <template>
-  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16"
-    style="--paper-background: var(--md-surface-container)">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16">
     <div class="mb-3 flex items-start justify-between gap-3">
       <div>
         <h3 class="text-base font-medium text-on-surface">下载加速代理</h3>
@@ -64,7 +63,7 @@
               :disabled="index === 0"
               @click="move(index, -1)"
             >
-              <VarIcon name="chevron-down" :size="16" class="rotate-180" />
+              <ChevronUp :size="16" />
             </VarButton>
             <VarButton
               icon-container
@@ -75,7 +74,7 @@
               :disabled="index === proxies.length - 1"
               @click="move(index, 1)"
             >
-              <VarIcon name="chevron-down" :size="16" />
+              <ChevronDown :size="16" />
             </VarButton>
           </div>
         </div>
@@ -90,7 +89,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import { Button as VarButton, Icon as VarIcon, Paper as VarPaper, Switch as VarSwitch } from "@varlet/ui";
+import { ChevronDown, ChevronUp } from "@lucide/vue";
+import { Button as VarButton, Paper as VarPaper, Switch as VarSwitch } from "@varlet/ui";
 import { useEnvStore } from "@/stores/env";
 import { useUpdateStore } from "@/stores/update";
 import { useToast } from "@/composables/useToast";

@@ -1,5 +1,5 @@
 <template>
-  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16">
     <div class="mb-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-3">
         <h3 class="text-base font-medium text-on-surface">日志</h3>

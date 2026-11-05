@@ -1,5 +1,5 @@
 <template>
-  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16">
     <h3 class="mb-3 text-base font-medium text-on-surface">JS 调试</h3>
     <VarInput
       v-model="code"

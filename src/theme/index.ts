@@ -5,10 +5,6 @@ import { getThemeVars, type ThemeMode, type ThemePreference } from "./tokens";
 const STORAGE_KEY = "gqek:theme-preference";
 const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-/** Surface colors used for the browser theme-color meta tag and related UI */
-const lightThemeColor = "#f2faf7";
-const darkThemeColor = "#101413";
-
 function readPreference(): ThemePreference {
   const raw = localStorage.getItem(STORAGE_KEY);
   return raw === "light" || raw === "dark" || raw === "system" ? raw : "system";
@@ -19,12 +15,12 @@ function resolveMode(preference: ThemePreference): ThemeMode {
   return preference;
 }
 
-/** Update the meta[name=theme-color] to match current surface background */
-function updateThemeColor(mode: ThemeMode) {
+/** Read the resolved page surface from CSS so the native shell matches the theme. */
+function updateThemeColor() {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) {
-    meta.setAttribute("content", mode === "dark" ? darkThemeColor : lightThemeColor);
-  }
+  if (!meta) return;
+  const surface = getComputedStyle(document.documentElement).getPropertyValue("--md-surface").trim();
+  if (surface) meta.setAttribute("content", surface);
 }
 
 /** Apply the resolved palette; Varlet vars and native controls follow together. */
@@ -33,7 +29,7 @@ export function applyTheme(preference: ThemePreference) {
   StyleProvider(getThemeVars(mode));
   document.documentElement.style.colorScheme = mode;
   document.documentElement.dataset.theme = mode;
-  updateThemeColor(mode);
+  updateThemeColor();
 }
 
 const preference = ref<ThemePreference>(readPreference());

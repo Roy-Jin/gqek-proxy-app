@@ -2,9 +2,11 @@
   <div class="p-4 max-w-3xl mx-auto">
     <!-- General -->
     <p class="mb-2 px-1 text-sm font-medium text-on-surface-variant">通用</p>
-    <VarPaper class="overflow-hidden" :elevation="0" :radius="16"
-      style="--paper-background: var(--md-surface-container)" :style="cellVars">
-      <VarCell title="应用启动入口" icon="home-outline" icon-class="text-on-surface-variant" border :border-offset="16">
+    <VarPaper class="overflow-hidden" :elevation="0" :radius="16" :style="cellVars">
+      <VarCell title="应用启动入口" border :border-offset="16">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><House :size="20" /></span>
+        </template>
         <template #extra>
           <div class="w-28 shrink-0">
             <VarSelect v-model="defaultEntry" :options="entryOptions" size="small" variant="outlined"
@@ -12,7 +14,10 @@
           </div>
         </template>
       </VarCell>
-      <VarCell title="外观主题" icon="palette-outline" icon-class="text-on-surface-variant">
+      <VarCell title="外观主题">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><Palette :size="20" /></span>
+        </template>
         <template #extra>
           <div class="w-28 shrink-0">
             <VarSelect v-model="themeValue" :options="themeModes" size="small" variant="outlined"
@@ -24,16 +29,19 @@
 
     <!-- Updates -->
     <p class="mb-2 mt-6 px-1 text-sm font-medium text-on-surface-variant">更新</p>
-    <VarPaper class="overflow-hidden" :elevation="0" :radius="16"
-      style="--paper-background: var(--md-surface-container)" :style="cellVars">
-      <VarCell title="启动自动检查更新" description="关闭后将不会弹出更新提示" icon="refresh" icon-class="text-on-surface-variant"
-        border :border-offset="16">
+    <VarPaper class="overflow-hidden" :elevation="0" :radius="16" :style="cellVars">
+      <VarCell title="启动自动检查更新" description="关闭后将不会弹出更新提示" border :border-offset="16">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><RefreshCw :size="20" /></span>
+        </template>
         <template #extra>
           <VarSwitch variant :model-value="autoCheckEnabled" aria-label="启动自动检查更新" @change="toggleAutoCheck" />
         </template>
       </VarCell>
-      <VarCell title="开启下载代理" description="下载更新包时通过代理加速" icon="download-outline"
-        icon-class="text-on-surface-variant">
+      <VarCell title="开启下载代理" description="下载更新包时通过代理加速">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><Download :size="20" /></span>
+        </template>
         <template #extra>
           <VarSwitch variant :model-value="proxyEnabled" aria-label="开启下载代理" @change="toggleProxy" />
         </template>
@@ -43,11 +51,13 @@
     <!-- Debug -->
     <template v-if="debugUnlocked">
       <p class="mb-2 mt-6 px-1 text-sm font-medium text-on-surface-variant">其他</p>
-      <VarPaper class="overflow-hidden" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)" :style="cellVars">
-        <VarCell title="开发者调试" icon="code-json" icon-class="text-on-surface-variant" ripple @click="goDebug">
+      <VarPaper class="overflow-hidden" :elevation="0" :radius="16" :style="cellVars">
+        <VarCell title="开发者调试" ripple @click="goDebug">
+          <template #icon>
+            <span class="var-cell__icon text-on-surface-variant"><CodeXml :size="20" /></span>
+          </template>
           <template #extra>
-            <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+            <ChevronRight :size="20" class="text-on-surface-variant" />
           </template>
         </VarCell>
       </VarPaper>
@@ -59,9 +69,9 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { definePage } from "vue-router/experimental";
+import { ChevronRight, CodeXml, Download, House, Palette, RefreshCw } from "@lucide/vue";
 import {
   Cell as VarCell,
-  Icon as VarIcon,
   Paper as VarPaper,
   Select as VarSelect,
   Switch as VarSwitch,

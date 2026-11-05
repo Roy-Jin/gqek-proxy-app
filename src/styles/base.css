@@ -16,7 +16,9 @@
     --color-primary-container: var(--md-primary-container);
     --color-on-primary-container: var(--md-on-primary-container);
 
-    /* Secondary container (MD3 segmented buttons, tonal chips) */
+    /* Secondary (MD3 segmented buttons, tonal chips, nav pills) */
+    --color-secondary: var(--md-secondary);
+    --color-on-secondary: var(--md-on-secondary);
     --color-secondary-container: var(--md-secondary-container);
     --color-on-secondary-container: var(--md-on-secondary-container);
 
@@ -35,6 +37,12 @@
     --color-outline: var(--md-outline);
     --color-outline-variant: var(--md-outline-variant);
 
+    /* Info */
+    --color-info: var(--md-info);
+    --color-on-info: var(--md-on-info);
+    --color-info-container: var(--md-info-container);
+    --color-on-info-container: var(--md-on-info-container);
+
     /* Error */
     --color-error: var(--md-error);
     --color-on-error: var(--md-on-error);
@@ -52,6 +60,9 @@
     --color-on-warning: var(--md-on-warning);
     --color-warning-container: var(--md-warning-container);
     --color-on-warning-container: var(--md-on-warning-container);
+
+    /* Media overlay */
+    --color-on-image: var(--md-on-image);
 
     /* Elevation */
     --shadow-e0: var(--md-elevation-0);
@@ -116,6 +127,7 @@ body {
 }
 
 @media (max-width: 640px) {
+
     /* Keep 16px form text so WebView does not zoom on focus */
     input,
     textarea,
@@ -144,11 +156,21 @@ img {
     color: var(--md-on-primary);
 }
 
-/* Varlet Switch variant: override hard-coded #888 colors to follow MD3 outline token */
-:root {
-    --switch-track-background: var(--md-surface-container-highest);
-    --switch-variant-track-border-color: var(--md-outline);
-    --switch-variant-handle-background: var(--md-outline);
+/*
+ * Raised surfaces share one hairline border and one soft shadow, so cards keep
+ * a clear edge against the page in both modes (dark relies less on shadow).
+ */
+.var-paper,
+.var-card {
+    border: 1px solid var(--md-card-border);
+    box-shadow: var(--md-card-shadow);
+}
+
+/* Card surface for plain containers that are not Varlet Paper/Card. */
+.app-card {
+    background-color: var(--md-card-surface);
+    border: 1px solid var(--md-card-border);
+    box-shadow: var(--md-card-shadow);
 }
 
 /* Floating action button in inverse surface, so it never blends with primary selection states */
@@ -159,6 +181,7 @@ img {
 
 /* Low-end WebView falls back to the reduced motion rules below */
 @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {

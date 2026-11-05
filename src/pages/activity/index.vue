@@ -6,7 +6,7 @@
         <p class="mt-1 text-sm text-on-surface-variant">本组织主办的活动</p>
       </div>
       <VarButton text type="primary" size="small" :loading="loading" @click="refresh">
-        <VarIcon name="refresh" :size="16" class="mr-1" />
+        <RefreshCw :size="16" class="mr-1" />
         刷新
       </VarButton>
     </div>
@@ -16,8 +16,7 @@
 
     <!-- Loading skeleton (first load) -->
     <div v-if="loading && rows.length === 0" class="mt-3 space-y-3">
-      <VarPaper v-for="i in 5" :key="i" class="flex items-center gap-3 p-3" :elevation="0" :radius="16"
-        style="--paper-background: var(--md-surface-container)">
+      <VarPaper v-for="i in 5" :key="i" class="flex items-center gap-3 p-3" :elevation="0" :radius="16">
         <div class="w-20 h-20 rounded-md bg-surface-high shrink-0 animate-pulse"></div>
         <div class="flex-1 space-y-2">
           <div class="h-4 rounded bg-surface-high w-3/4 animate-pulse"></div>
@@ -42,7 +41,7 @@
                 <img v-if="item.activityAvatarUrl" :src="item.activityAvatarUrl" :alt="item.activityName"
                   class="w-full h-full object-cover" loading="lazy" />
                 <div v-else class="w-full h-full grid place-items-center text-on-surface-variant">
-                  <VarIcon name="file-document-outline" :size="24" />
+                  <Image :size="24" />
                 </div>
               </div>
               <span
@@ -61,18 +60,18 @@
 
               <div class="mt-auto pt-2 space-y-1 text-xs text-on-surface-variant">
                 <div class="flex items-center gap-1">
-                  <VarIcon name="calendar-month-outline" :size="14" class="shrink-0" />
+                  <CalendarDays :size="14" class="shrink-0" />
                   <span class="truncate">{{ item.activityStartTime }}</span>
                 </div>
               </div>
 
               <div class="mt-2 flex items-center gap-3 text-xs text-on-surface-variant">
                 <span class="inline-flex items-center gap-1">
-                  <VarIcon name="history" :size="14" />
+                  <Clock :size="14" />
                   {{ item.duration || '—' }} 小时
                 </span>
                 <span class="inline-flex items-center gap-1">
-                  <VarIcon name="account-circle-outline" :size="14" />
+                  <CircleUser :size="14" />
                   {{ item.memberNum }} 人
                 </span>
               </div>
@@ -82,8 +81,7 @@
       </div>
 
       <template #finished>
-        <VarPaper v-if="rows.length === 0" :elevation="0" :radius="16"
-          style="--paper-background: var(--md-surface-container)">
+        <VarPaper v-if="rows.length === 0" :elevation="0" :radius="16">
           <AppEmpty text="暂无本组织活动记录" />
         </VarPaper>
         <p v-else class="py-4 text-center text-sm text-on-surface-variant">数据都被你榨干了…</p>
@@ -95,7 +93,13 @@
     </VarList>
 
     <!-- TODO: wire activity actions (create activity, etc.) into this fab later -->
-    <VarFab class="fab-inverse" :bottom="84" :right="16" inactive-icon="plus" :inactive-icon-size="24" />
+    <VarFab class="fab-inverse" :bottom="84" :right="16">
+      <template #trigger>
+        <VarButton var-fab-cover class="var-fab__trigger" icon-container>
+          <Plus :size="24" />
+        </VarButton>
+      </template>
+    </VarFab>
 
     <!-- Scroll target is the app shell's <main>, not the window -->
     <VarBackTop target="main" :visibility-height="320" :right="16" :bottom="152" />
@@ -105,11 +109,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { CalendarDays, CircleUser, Clock, Image, Plus, RefreshCw } from "@lucide/vue";
 import {
   BackTop as VarBackTop,
   Button as VarButton,
   Fab as VarFab,
-  Icon as VarIcon,
   List as VarList,
   Paper as VarPaper,
 } from "@varlet/ui";

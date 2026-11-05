@@ -1,5 +1,5 @@
 <template>
-  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16">
     <h3 class="mb-3 text-base font-medium text-on-surface">当前账号</h3>
     <div class="space-y-1.5 text-sm text-on-surface-variant">
       <p>姓名：{{ text(auth.user?.nickName) }}</p>

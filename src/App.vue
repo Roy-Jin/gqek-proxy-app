@@ -33,7 +33,7 @@
           aria-label="返回"
           @click="back"
         >
-          <VarIcon name="arrow-left" :size="22" />
+          <ArrowLeft :size="22" />
         </VarButton>
       </template>
     </VarAppBar>
@@ -65,8 +65,8 @@
         :name="item.name"
         :label="item.label"
       >
-        <template #icon="{ active }">
-          <VarIcon :name="active ? item.iconActive : item.icon" />
+        <template #icon>
+          <component :is="item.icon" :size="22" />
         </template>
       </VarBottomNavigationItem>
     </VarBottomNavigation>
@@ -82,10 +82,11 @@ import {
   BottomNavigation as VarBottomNavigation,
   BottomNavigationItem as VarBottomNavigationItem,
   Button as VarButton,
-  Icon as VarIcon,
   Loading as VarLoading,
 } from "@varlet/ui";
 import { getInfo } from "@/api";
+import type { LucideIcon } from "@lucide/vue";
+import { ArrowLeft, Goal, Info, ListTodo } from "@lucide/vue";
 import { useAccountSession, toUserBrief } from "@/composables/useAccountSession";
 import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useEnvStore } from "@/stores/env";
@@ -126,14 +127,13 @@ interface NavItem {
   name: "activity" | "todo" | "about";
   path: string;
   label: string;
-  icon: string;
-  iconActive: string;
+  icon: LucideIcon;
 }
 
 const navItems: NavItem[] = [
-  { name: "activity", path: "/activity", label: "活动", icon: "home-outline", iconActive: "home" },
-  { name: "todo", path: "/todo", label: "待办", icon: "checkbox-marked-outline", iconActive: "checkbox-marked" },
-  { name: "about", path: "/about", label: "关于", icon: "information-outline", iconActive: "information" },
+  { name: "activity", path: "/activity", label: "活动", icon: Goal },
+  { name: "todo", path: "/todo", label: "待办", icon: ListTodo },
+  { name: "about", path: "/about", label: "关于", icon: Info },
 ];
 
 const navActive = computed(

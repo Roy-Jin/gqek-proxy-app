@@ -6,7 +6,7 @@
         <p class="mt-1 text-sm text-on-surface-variant">跟踪需要处理的消息</p>
       </div>
       <VarButton text type="primary" size="small" :loading="loading" @click="refresh">
-        <VarIcon name="refresh" :size="18" class="mr-1" />
+        <RefreshCw :size="18" class="mr-1" />
         刷新
       </VarButton>
     </div>
@@ -18,7 +18,7 @@
     <div class="mt-3 flex items-center gap-3">
       <VarInput v-model="keyword" :hint="false" class="min-w-0 flex-1" placeholder="搜索一下" clearable>
         <template #prepend-icon>
-          <VarIcon name="magnify" :size="20" class="text-on-surface-variant" />
+          <Search :size="20" class="text-on-surface-variant" />
         </template>
       </VarInput>
       <VarCheckbox v-if="activeTab === 0" class="shrink-0" :model-value="allSelected"
@@ -27,7 +27,7 @@
       </VarCheckbox>
     </div>
 
-    <VarPaper class="mt-4 overflow-hidden" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
+    <VarPaper class="mt-4 overflow-hidden" :elevation="0" :radius="16">
       <!-- Loading skeleton -->
       <div v-if="loading && rows.length === 0" class="divide-y divide-outline-variant">
         <div v-for="i in 5" :key="i" class="animate-pulse space-y-2 p-4">
@@ -74,13 +74,17 @@
     </VarPaper>
 
     <!-- Batch approval speed dial, only shown once something is selected -->
-    <VarFab v-if="selectedIds.length > 0" v-model:active="fabActive" class="fab-inverse" :bottom="84" :right="16"
-      inactive-icon="dots-vertical" active-icon="window-close" :inactive-icon-size="24" :active-icon-size="20">
+    <VarFab v-if="selectedIds.length > 0" v-model:active="fabActive" class="fab-inverse" :bottom="84" :right="16">
+      <template #trigger="{ active }">
+        <VarButton var-fab-cover class="var-fab__trigger" icon-container>
+          <component :is="active ? ChevronDown : EllipsisVertical" :size="active ? 20 : 24" />
+        </VarButton>
+      </template>
       <VarButton type="primary" :disabled="approving" @click="onFabApprove" icon-container>
-        <VarIcon name="check" :size="20" />
+        <CircleCheckBig :size="20" />
       </VarButton>
       <VarButton type="danger" :disabled="approving" @click="onFabReject" icon-container>
-        <VarIcon name="close-circle-outline" :size="20" />
+        <CircleX :size="20" />
       </VarButton>
     </VarFab>
 
@@ -119,13 +123,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ChevronDown, CircleCheckBig, CircleX, EllipsisVertical, RefreshCw, Search } from "@lucide/vue";
 import {
   BackTop as VarBackTop,
   Button as VarButton,
   Checkbox as VarCheckbox,
   Dialog,
   Fab as VarFab,
-  Icon as VarIcon,
   Input as VarInput,
   List as VarList,
   Paper as VarPaper,

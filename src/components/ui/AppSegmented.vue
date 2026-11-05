@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string | number">
-import { Icon as VarIcon } from "@varlet/ui";
+import { Check } from "@lucide/vue";
 
 withDefaults(
   defineProps<{
@@ -24,7 +24,7 @@ const emit = defineEmits<{ change: [value: T] }>();
       :aria-pressed="item.value === active"
       @click="emit('change', item.value)"
     >
-      <VarIcon v-if="item.value === active" name="check" :size="16" class="app-segmented__check" />
+      <Check v-if="item.value === active" :size="16" class="app-segmented__check" />
       <span>{{ item.label }}</span>
     </button>
   </div>
@@ -63,6 +63,10 @@ const emit = defineEmits<{ change: [value: T] }>();
 
 .app-segmented__item + .app-segmented__item {
   border-left: 1px solid var(--md-outline);
+}
+
+.app-segmented__item:not(.app-segmented__item--active):hover {
+  background: var(--md-state-layer-hover);
 }
 
 .app-segmented__item:active {

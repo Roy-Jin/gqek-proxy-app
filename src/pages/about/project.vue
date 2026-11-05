@@ -18,7 +18,7 @@
       </p>
       <VarButton class="mt-4" type="primary" tonal @click="openUpdate">
         <span class="inline-flex items-center gap-2">
-          <VarIcon name="refresh" :size="18" />
+          <RefreshCw :size="18" />
           检查更新
         </span>
       </VarButton>
@@ -26,17 +26,16 @@
 
     <!-- External links -->
     <p class="mb-2 mt-8 px-1 text-sm font-medium text-on-surface-variant">更多</p>
-    <VarPaper class="overflow-hidden" :elevation="0" :radius="16"
-      style="--paper-background: var(--md-surface-container)" :style="cellVars">
+    <VarPaper class="overflow-hidden" :elevation="0" :radius="16" :style="cellVars">
       <VarCell v-for="(link, index) in links" :key="link.label" :title="link.label" :description="link.description"
         ripple :border="index < links.length - 1" :border-offset="16" @click="openExternal(link.url)">
         <template #icon>
-          <span class="grid h-9 w-9 place-items-center rounded-full bg-surface-container text-on-surface-variant">
-            <VarIcon :name="link.icon" :size="20" />
+          <span class="grid h-9 w-9 place-items-center rounded-full bg-surface-high text-on-surface-variant">
+            <component :is="link.icon" :size="20" />
           </span>
         </template>
         <template #extra>
-          <VarIcon name="share-outline" :size="18" class="text-on-surface-variant" />
+          <Share2 :size="18" class="text-on-surface-variant" />
         </template>
       </VarCell>
     </VarPaper>
@@ -46,11 +45,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { definePage } from "vue-router/experimental";
+import { FolderGit, History, MessageSquareText, RefreshCw, Share2 } from "@lucide/vue";
 import {
   Button as VarButton,
   Cell as VarCell,
   Chip as VarChip,
-  Icon as VarIcon,
   Paper as VarPaper,
 } from "@varlet/ui";
 import { useAppUpdate } from "@/composables/useAppUpdate";
@@ -81,19 +80,19 @@ const links = computed(() => [
   {
     label: "项目",
     description: "查看源码、提交记录与版本发布",
-    icon: "github",
+    icon: FolderGit,
     url: env.links.repoUrl,
   },
   {
     label: "更新日志",
     description: "查看历史版本与更新说明",
-    icon: "history",
+    icon: History,
     url: `${env.links.repoUrl}/releases`,
   },
   {
     label: "问题反馈",
     description: "在 GitHub 提交 Issues",
-    icon: "message-text-outline",
+    icon: MessageSquareText,
     url: `${env.links.repoUrl}/issues`,
   },
 ]);

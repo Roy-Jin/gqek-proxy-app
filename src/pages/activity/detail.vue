@@ -12,21 +12,20 @@
       <VarCard class="hero-card" :elevation="false">
         <template #image>
           <div class="relative h-48 w-full overflow-hidden sm:h-60">
-            <img v-if="hasCover" :src="cover" :alt="detail.activityName" class="h-full w-full object-cover"
+            <img v-if="hasCover" :src="cover" :alt="detail.activityName" class="h-full w-full object-contain"
               referrerpolicy="no-referrer" @error="onImgError" />
             <div v-else class="grid h-full w-full place-items-center bg-linear-to-br from-primary to-inverse-surface">
-              <VarIcon name="image-outline" :size="48" class="text-white/30" />
+              <Image :size="48" class="text-on-image/30" />
             </div>
 
-            <div class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/75 via-black/25 to-transparent">
-            </div>
+            <div class="hero-scrim pointer-events-none absolute inset-0"></div>
 
             <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-5">
               <div class="min-w-0">
-                <h1 class="text-xl font-semibold leading-snug text-white line-clamp-2 sm:text-2xl">
+                <h1 class="text-xl font-semibold leading-snug text-on-image line-clamp-2 sm:text-2xl">
                   {{ detail.activityName }}
                 </h1>
-                <p class="mt-1.5 truncate text-sm text-white/75">{{ detail.maintainerName || '—' }}</p>
+                <!-- <p class="mt-1.5 truncate text-sm text-white/75">{{ detail.maintainerName || '—' }}</p> -->
               </div>
               <VarChip class="shrink-0" :type="statusChipType" size="small">
                 {{ activityStatusLabel(detail.status) }}
@@ -47,30 +46,46 @@
       <template v-if="showSign">
         <div class="section-title">签到管理</div>
         <VarPaper class="cell-card overflow-hidden" :elevation="0" :radius="20">
-          <VarCell title="签到" icon="account-check-outline" icon-class="text-on-surface-variant" border
-            :border-offset="16">
+          <VarCell title="签到" border :border-offset="16">
+            <template #icon>
+              <span class="var-cell__icon text-on-surface-variant">
+                <UserCheck :size="20" />
+              </span>
+            </template>
             <template #extra>
               <VarSwitch variant :model-value="detail.signFlag === '1'" :disabled="signing" @change="toggleSign" />
             </template>
           </VarCell>
-          <VarCell title="签退" icon="account-arrow-right-outline" icon-class="text-on-surface-variant" border
-            :border-offset="16">
+          <VarCell title="签退" border :border-offset="16">
+            <template #icon>
+              <span class="var-cell__icon text-on-surface-variant">
+                <LogOut :size="20" />
+              </span>
+            </template>
             <template #extra>
               <VarSwitch variant :model-value="detail.signOutFlag === '1'" :disabled="signing"
                 @change="toggleSignOut" />
             </template>
           </VarCell>
-          <VarCell title="签到签退二维码" description="点击预览二维码，供参与者扫码" icon="qrcode" icon-class="text-on-surface-variant"
-            border :border-offset="16" ripple @click="openSignQr">
+          <VarCell title="签到签退二维码" description="点击预览二维码，供参与者扫码" border :border-offset="16" ripple @click="openSignQr">
+            <template #icon>
+              <span class="var-cell__icon text-on-surface-variant">
+                <QrCode :size="20" />
+              </span>
+            </template>
             <template #extra>
               <VarLoading v-if="qrLoading" type="circle" size="mini" />
-              <VarIcon v-else name="chevron-right" :size="20" class="text-on-surface-variant" />
+              <ChevronRight v-else :size="20" class="text-on-surface-variant" />
             </template>
           </VarCell>
-          <VarCell title="成员补签" description="为未签到、未签退的成员补签" icon="account-multiple-plus-outline"
-            icon-class="text-on-surface-variant" ripple @click="showMembers = true">
+          <VarCell title="成员补签" description="为未签到、未签退的成员补签" ripple @click="showMembers = true">
+            <template #icon>
+              <span class="var-cell__icon text-on-surface-variant">
+                <UserRoundPlus :size="20" />
+              </span>
+            </template>
             <template #extra>
-              <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+              <ChevronRight :size="20" class="text-on-surface-variant" />
             </template>
           </VarCell>
         </VarPaper>
@@ -92,10 +107,10 @@
       <VarPaper class="surface-card overflow-hidden" :elevation="0" :radius="20">
         <div class="divide-y divide-outline-variant">
           <div v-for="item in timeInfo" :key="item.label" class="flex items-start gap-3 px-4 py-4 sm:px-5">
-            <VarIcon :name="item.icon" :size="20" class="mt-0.5 shrink-0 text-on-surface-variant" />
+            <component :is="item.icon" :size="20" class="mt-0.5 shrink-0 text-on-surface-variant" />
             <div class="min-w-0 flex-1">
               <p class="text-xs text-on-surface-variant">{{ item.label }}</p>
-              <p class="mt-1 text-sm font-medium text-on-surface wrap-break-word">{{ item.value }}</p>
+              <p class="mt-1 text-sm font-medium text-on-surface wrap-break-word" v-for="v in item.value">{{ v }}</p>
             </div>
           </div>
         </div>
@@ -109,7 +124,7 @@
             <div v-for="(t, i) in teachers" :key="i"
               class="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
               <div class="flex min-w-0 items-center gap-3">
-                <VarIcon name="school-outline" :size="20" class="shrink-0 text-on-surface-variant" />
+                <GraduationCap :size="20" class="shrink-0 text-on-surface-variant" />
                 <span class="truncate text-sm text-on-surface">{{ t.name }}</span>
               </div>
               <span class="shrink-0 text-xs text-on-surface-variant">{{ t.detail || '—' }}</span>
@@ -147,17 +162,18 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { definePage } from "vue-router/experimental";
+import { CalendarClock, CalendarDays, ChevronRight, GraduationCap, Image, LogOut, MapPin, QrCode, UserCheck, UserRoundPlus } from "@lucide/vue";
 import {
   Card as VarCard,
   Cell as VarCell,
   Chip as VarChip,
-  Icon as VarIcon,
   ImagePreview,
   Loading as VarLoading,
   Paper as VarPaper,
   Switch as VarSwitch,
 } from "@varlet/ui";
 import { getActivityDetail, getVolunteerActivityDetail, getSignQrCode, signFlagChange, activityStatusLabel } from "@/api";
+import type { LucideIcon } from "@lucide/vue";
 import type { ActivityDetail } from "@/api";
 import { useToast } from "@/composables/useToast";
 import { errorMessage } from "@/utils/error";
@@ -171,7 +187,7 @@ type ChipType = "default" | "primary" | "info" | "success" | "warning" | "danger
 interface InfoItem {
   label: string;
   value: string;
-  icon?: string;
+  icon?: LucideIcon;
 }
 
 const route = useRoute();
@@ -225,13 +241,13 @@ const basicInfo = computed<InfoItem[]>(() => {
   return rows;
 });
 
-const timeInfo = computed<InfoItem[]>(() => {
+const timeInfo = computed(() => {
   const d = detail.value;
   if (!d) return [];
   return [
-    { label: "活动时间", icon: "calendar-clock-outline", value: `${d.activityStartTime} ~ ${d.activityEndTime}` },
-    { label: "报名时间", icon: "calendar-month-outline", value: `${d.registerStartTime} ~ ${d.registerEndTime}` },
-    { label: "活动地点", icon: "map-marker-outline", value: d.activityLocation || "—" },
+    { label: "活动时间", icon: CalendarClock, value: [d.activityStartTime, d.activityEndTime] },
+    { label: "报名时间", icon: CalendarDays, value: [d.registerStartTime, d.registerEndTime] },
+    { label: "活动地点", icon: MapPin, value: [d.activityLocation || "—"] },
   ];
 });
 
@@ -339,7 +355,7 @@ onMounted(fetchDetail);
 <style scoped>
 /* Varlet Card tuned to the app surface tokens */
 .hero-card {
-  --card-background: var(--md-surface-container);
+  --card-background: var(--md-card-surface);
   --card-border-radius: 20px;
   --card-padding: 0;
   --card-content-padding: 0;
@@ -348,12 +364,12 @@ onMounted(fetchDetail);
 }
 
 .surface-card {
-  --paper-background: var(--md-surface-container);
+  --paper-background: var(--md-card-surface);
 }
 
 /* Cell list inside the sign card */
 .cell-card {
-  --paper-background: var(--md-surface-container);
+  --paper-background: var(--md-card-surface);
   --cell-color: var(--md-on-surface);
   --cell-description-color: var(--md-on-surface-variant);
   --cell-font-size: 14px;
@@ -361,6 +377,11 @@ onMounted(fetchDetail);
   --cell-border-color: var(--md-outline-variant);
   --cell-icon-right: 12px;
   --cell-extra-left: 12px;
+}
+
+/* Scrim keeps the overlaid title readable on any cover image */
+.hero-scrim {
+  background-image: var(--md-image-scrim);
 }
 
 .section-title {

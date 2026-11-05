@@ -6,7 +6,7 @@
     </div>
 
     <!-- Current account & team -->
-    <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
+    <VarPaper class="mb-4 p-4" :elevation="0" :radius="16">
       <div v-if="teamLoading" class="flex items-center gap-3">
         <div class="h-14 w-14 rounded-md bg-surface-high animate-pulse shrink-0"></div>
         <div class="space-y-2">
@@ -31,38 +31,46 @@
         </div>
       </div>
     </VarPaper>
-    <VarPaper class="mb-4 overflow-hidden" :elevation="0" :radius="16"
-      style="--paper-background: var(--md-surface-container)" :style="cellVars">
-      <VarCell title="账号相关" icon="card-account-details-outline" icon-class="text-on-surface-variant"
-        ripple @click="goAccount">
+    <VarPaper class="mb-4 overflow-hidden" :elevation="0" :radius="16" :style="cellVars">
+      <VarCell title="账号相关" ripple @click="goAccount">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><IdCard :size="20" /></span>
+        </template>
         <template #extra>
-          <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+          <ChevronRight :size="20" class="text-on-surface-variant" />
         </template>
       </VarCell>
     </VarPaper>
 
     <!-- Entries: project info & settings -->
-    <VarPaper class="overflow-hidden" :elevation="0" :radius="16"
-      style="--paper-background: var(--md-surface-container)" :style="cellVars">
-      <VarCell :title="env.developer.statementTitle" icon="file-document-outline" icon-class="text-on-surface-variant"
-        ripple border :border-offset="16" @click="showDevStatement = true">
+    <VarPaper class="overflow-hidden" :elevation="0" :radius="16" :style="cellVars">
+      <VarCell :title="env.developer.statementTitle" ripple border :border-offset="16"
+        @click="showDevStatement = true">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><FileText :size="20" /></span>
+        </template>
         <template #extra>
-          <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+          <ChevronRight :size="20" class="text-on-surface-variant" />
         </template>
       </VarCell>
-      <VarCell title="设置" icon="cog-outline" icon-class="text-on-surface-variant" ripple border :border-offset="16"
-        @click="goSettings">
+      <VarCell title="设置" ripple border :border-offset="16" @click="goSettings">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><Settings :size="20" /></span>
+        </template>
         <template #extra>
-          <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+          <ChevronRight :size="20" class="text-on-surface-variant" />
         </template>
       </VarCell>
-      <VarCell title="关于项目" icon="information-outline" icon-class="text-on-surface-variant" ripple @click="goProject">
+      <VarCell title="关于项目" ripple @click="goProject">
+        <template #icon>
+          <span class="var-cell__icon text-on-surface-variant"><Info :size="20" /></span>
+        </template>
         <template #extra>
           <div class="flex items-center gap-2">
             <span v-if="hasUpdate" class="h-2 w-2 rounded-full bg-error">
               <span class="sr-only">有新版本</span>
             </span>
-            <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
+            <ChevronRight :size="20" class="text-on-surface-variant" />
           </div>
         </template>
       </VarCell>
@@ -94,7 +102,6 @@ import {
   Button as VarButton,
   Cell as VarCell,
   Dialog,
-  Icon as VarIcon,
   Paper as VarPaper,
 } from "@varlet/ui";
 import { listTeam } from "@/api";
@@ -104,6 +111,7 @@ import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useDebugUnlock } from "@/composables/useDebugUnlock";
 import { useEnvStore } from "@/stores/env";
 import { useGlobal } from "@/stores/global";
+import { ChevronRight, FileText, IdCard, Info, Settings } from "@lucide/vue";
 import { useToast } from "@/composables/useToast";
 
 // `Dialog` is Varlet's imperative API; the render component lives on `.Component`

@@ -2,8 +2,7 @@
   <div class="p-4 max-w-3xl mx-auto">
     <!-- Current account -->
     <p class="mb-2 px-1 text-sm font-medium text-on-surface-variant">当前账号</p>
-    <VarPaper :elevation="0" :radius="16" class="mb-6 p-4"
-      style="--paper-background: var(--md-surface-container)">
+    <VarPaper :elevation="0" :radius="16" class="mb-6 p-4">
       <div class="flex items-center gap-3">
         <img v-if="team?.teamAvatar" :src="team.teamAvatar" :alt="team.teamName"
           class="h-14 w-14 rounded-md object-cover shrink-0" />
@@ -34,8 +33,7 @@
       <span v-if="savedAccounts.length" class="text-xs text-on-surface-variant">共 {{ savedAccounts.length }} 个</span>
     </div>
 
-    <VarPaper v-if="savedAccounts.length" class="overflow-hidden" :elevation="0" :radius="16"
-      style="--paper-background: var(--md-surface-container)" :style="cellVars">
+    <VarPaper v-if="savedAccounts.length" class="overflow-hidden" :elevation="0" :radius="16" :style="cellVars">
       <VarCell v-for="(account, index) in savedAccounts" :key="account.userId" :title="account.userName || '未提供'"
         :description="'ID：' + (account.userId || '未提供')" ripple extra-class="shrink-0"
         :border="index < savedAccounts.length - 1" :border-offset="16" @click="onAccountClick(account.userId)">
@@ -63,7 +61,7 @@
     <p class="mb-2 mt-6 px-1 text-sm font-medium text-on-surface-variant">账号操作</p>
     <VarButton type="primary" tonal block @click="addAccount">
       <span class="inline-flex items-center gap-2">
-        <VarIcon name="plus" :size="18" />
+        <Plus :size="18" />
         添加 / 登录新账号
       </span>
     </VarButton>
@@ -88,7 +86,6 @@ import {
   Cell as VarCell,
   Chip as VarChip,
   Dialog,
-  Icon as VarIcon,
   Loading as VarLoading,
   Paper as VarPaper,
   Result as VarResult,
@@ -99,6 +96,7 @@ import { useAccountSession } from "@/composables/useAccountSession";
 import { useAccountSwitch } from "@/composables/useAccountSwitch";
 import { useToast } from "@/composables/useToast";
 import { useAccountsStore } from "@/stores/accounts";
+import { Plus } from "@lucide/vue";
 import { useGlobal } from "@/stores/global";
 
 definePage({ meta: { title: "账号相关" } });
