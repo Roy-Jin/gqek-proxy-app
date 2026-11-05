@@ -8,6 +8,8 @@
 <script setup lang="ts">
 import { Icon as VarIcon } from "@varlet/ui";
 import { useRouter } from "vue-router";
+import { DEFAULT_ENTRY_PATH, useSettingsStore } from "@/stores/settings";
 const router = useRouter();
-router.replace("/activity");
+const settings = useSettingsStore();
+router.replace(DEFAULT_ENTRY_PATH[settings.defaultEntry]);
 </script>

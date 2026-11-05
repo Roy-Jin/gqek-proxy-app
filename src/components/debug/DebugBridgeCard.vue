@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
     <h3 class="mb-3 text-base font-medium text-on-surface">NativeBridge 调试</h3>
     <div class="space-y-1.5 text-sm text-on-surface-variant">
       <p>
@@ -27,12 +27,12 @@
       v-if="bridgeReady && bridgeMethods.length"
       class="mt-3 max-h-64 overflow-auto rounded-md bg-surface-high p-3 font-mono text-xs text-on-surface-variant"
     >{{ bridgeMethods.join("\n") }}</pre>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { Button as VarButton } from "@varlet/ui";
+import { Button as VarButton, Paper as VarPaper } from "@varlet/ui";
 import { getNativeVersion, listBridgeMethods, waitForBridge } from "@/utils/nativeBridge";
 
 const bridgeReady = ref(false);

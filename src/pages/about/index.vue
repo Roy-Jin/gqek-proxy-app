@@ -6,7 +6,7 @@
     </div>
 
     <!-- Current account & team -->
-    <div class="mb-4 bg-surface-container rounded-lg p-4">
+    <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
       <div v-if="teamLoading" class="flex items-center gap-3">
         <div class="h-14 w-14 rounded-md bg-surface-high animate-pulse shrink-0"></div>
         <div class="space-y-2">
@@ -30,18 +30,20 @@
           <p class="mt-0.5 text-xs text-on-surface-variant truncate">{{ schoolLabel }}</p>
         </div>
       </div>
-    </div>
-    <div class="mb-4 overflow-hidden rounded-lg bg-surface-container" :style="cellVars">
+    </VarPaper>
+    <VarPaper class="mb-4 overflow-hidden" :elevation="0" :radius="16"
+      style="--paper-background: var(--md-surface-container)" :style="cellVars">
       <VarCell title="账号相关" icon="card-account-details-outline" icon-class="text-on-surface-variant"
         ripple @click="goAccount">
         <template #extra>
           <VarIcon name="chevron-right" :size="20" class="text-on-surface-variant" />
         </template>
       </VarCell>
-    </div>
+    </VarPaper>
 
     <!-- Entries: project info & settings -->
-    <div class="overflow-hidden rounded-lg bg-surface-container" :style="cellVars">
+    <VarPaper class="overflow-hidden" :elevation="0" :radius="16"
+      style="--paper-background: var(--md-surface-container)" :style="cellVars">
       <VarCell :title="env.developer.statementTitle" icon="file-document-outline" icon-class="text-on-surface-variant"
         ripple border :border-offset="16" @click="showDevStatement = true">
         <template #extra>
@@ -64,7 +66,7 @@
           </div>
         </template>
       </VarCell>
-    </div>
+    </VarPaper>
 
     <!-- Developer statement dialog: hold the confirm button for 5s to unlock the debug entry -->
     <VarDialog v-model:show="showDevStatement" :title="env.developer.statementTitle" width="86vw"
@@ -93,6 +95,7 @@ import {
   Cell as VarCell,
   Dialog,
   Icon as VarIcon,
+  Paper as VarPaper,
 } from "@varlet/ui";
 import { listTeam } from "@/api";
 import type { TeamInfo } from "@/api";
@@ -145,7 +148,8 @@ function onConfirmStatement() {
 watch(debugUnlocked, (value) => {
   if (!value) return;
   showDevStatement.value = false;
-  toast.success("开发者调试已解锁，可在设置中进入");
+  toast.success("开发者调试已解锁！");
+  router.push("/about/debug");
 });
 
 // Closing the statement dialog must abort a pending hold

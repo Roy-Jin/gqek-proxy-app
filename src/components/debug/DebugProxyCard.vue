@@ -1,5 +1,6 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16"
+    style="--paper-background: var(--md-surface-container)">
     <div class="mb-3 flex items-start justify-between gap-3">
       <div>
         <h3 class="text-base font-medium text-on-surface">下载加速代理</h3>
@@ -84,12 +85,12 @@
         全部代理不可用，下载时将回退为原始链接
       </p>
     </template>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import { Button as VarButton, Icon as VarIcon, Switch as VarSwitch } from "@varlet/ui";
+import { Button as VarButton, Icon as VarIcon, Paper as VarPaper, Switch as VarSwitch } from "@varlet/ui";
 import { useEnvStore } from "@/stores/env";
 import { useUpdateStore } from "@/stores/update";
 import { useToast } from "@/composables/useToast";

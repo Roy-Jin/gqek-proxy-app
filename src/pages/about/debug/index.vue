@@ -5,7 +5,7 @@
       <p class="mt-1 text-sm text-on-surface-variant">诊断工具与调试入口</p>
     </div>
 
-    <div class="divide-y divide-outline-variant overflow-hidden rounded-lg bg-surface-container">
+    <VarPaper class="divide-y divide-outline-variant overflow-hidden" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
       <button
         v-for="item in modules"
         :key="item.path"
@@ -25,14 +25,14 @@
         </span>
         <VarIcon name="chevron-right" :size="20" class="shrink-0 text-on-surface-variant" />
       </button>
-    </div>
+    </VarPaper>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { definePage } from "vue-router/experimental";
-import { Icon as VarIcon, Ripple as vRipple } from "@varlet/ui";
+import { Icon as VarIcon, Paper as VarPaper, Ripple as vRipple } from "@varlet/ui";
 
 definePage({ meta: { title: "开发者调试" } });
 
@@ -49,7 +49,7 @@ const modules = [
     label: "网络与接口",
     description: "检测接口连通性，发起自定义 API 请求",
     path: "/about/debug/network",
-    icon: "refresh",
+    icon: "wifi",
   },
   {
     label: "JS 调试",
@@ -61,7 +61,7 @@ const modules = [
     label: "运行日志",
     description: "查看控制台日志记录并管理开关",
     path: "/about/debug/log",
-    icon: "format-list-checkbox",
+    icon: "history",
   },
   {
     label: "原生桥接",
@@ -73,7 +73,7 @@ const modules = [
     label: "下载代理",
     description: "探测下载加速节点并调整代理优先级",
     path: "/about/debug/proxy",
-    icon: "map-marker-outline",
+    icon: "download-outline",
   },
   {
     label: "本地存储",

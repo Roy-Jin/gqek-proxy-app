@@ -2,24 +2,31 @@
   <div class="p-4 max-w-3xl mx-auto">
     <!-- Current account -->
     <p class="mb-2 px-1 text-sm font-medium text-on-surface-variant">当前账号</p>
-    <VarCard variant="filled" :elevation="false" :style="currentCardVars" class="mb-6">
-      <div class="min-w-0">
-        <div class="flex items-center gap-2">
+    <VarPaper :elevation="0" :radius="16" class="mb-6 p-4"
+      style="--paper-background: var(--md-surface-container)">
+      <div class="flex items-center gap-3">
+        <img v-if="team?.teamAvatar" :src="team.teamAvatar" :alt="team.teamName"
+          class="h-14 w-14 rounded-md object-cover shrink-0" />
+        <div v-else
+          class="h-14 w-14 rounded-md bg-primary-container text-on-primary-container grid place-items-center text-lg font-semibold shrink-0">
+          {{ teamInitial }}
+        </div>
+        <div class="min-w-0 flex-1">
           <p class="min-w-0 truncate text-base font-semibold text-on-surface">{{ userNameLabel }}</p>
+          <div class="mt-1 flex items-center gap-1.5">
+            <p class="min-w-0 truncate text-sm" :class="team ? 'text-on-surface' : 'text-on-surface-variant'">
+              {{ teamLoading ? "团队信息加载中..." : teamNameLabel }}
+            </p>
+            <VarChip v-if="!teamLoading && teamRole" plain size="mini" :type="isTeamLeader ? 'primary' : 'info'"
+              class="shrink-0 whitespace-nowrap">
+              {{ teamRole }}
+            </VarChip>
+          </div>
+          <p class="mt-0.5 truncate text-xs text-on-surface-variant">{{ schoolLabel }}</p>
+          <p class="mt-1 truncate text-xs text-on-surface-variant">ID：{{ currentUserId || "未提供" }}</p>
         </div>
-        <div class="mt-1 flex items-center gap-1.5">
-          <p class="min-w-0 truncate text-sm" :class="team ? 'text-on-surface' : 'text-on-surface-variant'">
-            {{ teamLoading ? "团队信息加载中..." : teamNameLabel }}
-          </p>
-          <VarChip v-if="!teamLoading && teamRole" plain size="mini" :type="isTeamLeader ? 'primary' : 'info'"
-            class="shrink-0 whitespace-nowrap">
-            {{ teamRole }}
-          </VarChip>
-        </div>
-        <p class="mt-0.5 truncate text-xs text-on-surface-variant">{{ schoolLabel }}</p>
-        <p class="mt-1 truncate text-xs text-on-surface-variant">ID：{{ currentUserId || "未提供" }}</p>
       </div>
-    </VarCard>
+    </VarPaper>
 
     <!-- Saved accounts -->
     <div class="mb-2 flex items-center justify-between px-1">
@@ -27,7 +34,8 @@
       <span v-if="savedAccounts.length" class="text-xs text-on-surface-variant">共 {{ savedAccounts.length }} 个</span>
     </div>
 
-    <div v-if="savedAccounts.length" class="overflow-hidden rounded-lg bg-surface-container" :style="cellVars">
+    <VarPaper v-if="savedAccounts.length" class="overflow-hidden" :elevation="0" :radius="16"
+      style="--paper-background: var(--md-surface-container)" :style="cellVars">
       <VarCell v-for="(account, index) in savedAccounts" :key="account.userId" :title="account.userName || '未提供'"
         :description="'ID：' + (account.userId || '未提供')" ripple extra-class="shrink-0"
         :border="index < savedAccounts.length - 1" :border-offset="16" @click="onAccountClick(account.userId)">
@@ -43,7 +51,7 @@
           </VarButton>
         </template>
       </VarCell>
-    </div>
+    </VarPaper>
 
     <VarResult v-else type="empty" :image-size="56" title="暂无已保存的账号" description="登录其他账号后，可在这里一键切换"
       :style="emptyResultVars" />
@@ -77,12 +85,12 @@ import { definePage } from "vue-router/experimental";
 import {
   Alert as VarAlert,
   Button as VarButton,
-  Card as VarCard,
   Cell as VarCell,
   Chip as VarChip,
   Dialog,
   Icon as VarIcon,
   Loading as VarLoading,
+  Paper as VarPaper,
   Result as VarResult,
 } from "@varlet/ui";
 import { listTeam, logout as logoutApi } from "@/api";
@@ -119,16 +127,6 @@ const cellVars = {
   "--cell-border-color": "var(--md-outline-variant)",
 };
 
-// Filled VarCard reuses the Material surface container and removes its default inner spacing
-const currentCardVars = {
-  "--card-padding": "16px",
-  "--card-filled-background": "var(--md-surface-container)",
-  "--card-border-radius": "12px",
-  "--card-content-padding": "0",
-  "--card-content-margin": "0",
-  "--card-content-color": "var(--md-on-surface)",
-};
-
 // Varlet Result ships light-only colors; align the empty state with Material tokens
 const emptyResultVars = {
   "--result-background": "var(--md-surface-container)",
@@ -156,6 +154,7 @@ const teamNameLabel = computed(
 );
 const isTeamLeader = computed(() => Number(team.value?.memberFlag) === 1);
 const teamRole = computed(() => (team.value ? (isTeamLeader.value ? "队长" : "队员") : ""));
+const teamInitial = computed(() => (team.value?.teamName ?? "").charAt(0).toUpperCase() || "LOGO");
 
 function onAccountClick(userId: string) {
   if (userId === currentUserId.value) return;

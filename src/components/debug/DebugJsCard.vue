@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
     <h3 class="mb-3 text-base font-medium text-on-surface">JS 调试</h3>
     <VarInput
       v-model="code"
@@ -40,12 +40,12 @@
         >{{ entry.output }}</p>
       </div>
     </div>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { Button as VarButton, Input as VarInput } from "@varlet/ui";
+import { Button as VarButton, Input as VarInput, Paper as VarPaper } from "@varlet/ui";
 
 interface EvalEntry {
   id: number;

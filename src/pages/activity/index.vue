@@ -16,14 +16,15 @@
 
     <!-- Loading skeleton (first load) -->
     <div v-if="loading && rows.length === 0" class="mt-3 space-y-3">
-      <div v-for="i in 5" :key="i" class="flex items-center gap-3 p-3 rounded-lg bg-surface-container animate-pulse">
-        <div class="w-20 h-20 rounded-md bg-surface-high shrink-0"></div>
+      <VarPaper v-for="i in 5" :key="i" class="flex items-center gap-3 p-3" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
+        <div class="w-20 h-20 rounded-md bg-surface-high shrink-0 animate-pulse"></div>
         <div class="flex-1 space-y-2">
-          <div class="h-4 rounded bg-surface-high w-3/4"></div>
-          <div class="h-3 rounded bg-surface-high w-1/2"></div>
-          <div class="h-3 rounded bg-surface-high w-2/3"></div>
+          <div class="h-4 rounded bg-surface-high w-3/4 animate-pulse"></div>
+          <div class="h-3 rounded bg-surface-high w-1/2 animate-pulse"></div>
+          <div class="h-3 rounded bg-surface-high w-2/3 animate-pulse"></div>
         </div>
-      </div>
+      </VarPaper>
     </div>
 
     <!-- Error state (first load) -->
@@ -33,8 +34,8 @@
     <VarList v-else v-model:loading="loadingMore" :finished="noMore" :error="!!errorMsg" loading-text="加载中..."
       :offset="80" class="mt-3" @load="loadMore">
       <div class="space-y-3">
-        <VarCard v-for="item in rows" :key="item.activityId" ripple :elevation="0"
-          style="background: var(--md-surface-container); border-radius: 16px" @click="openDetail(item)">
+        <VarPaper v-for="item in rows" :key="item.activityId" :elevation="0" :radius="16" ripple
+          class="p-3" @click="openDetail(item)">
           <div class="flex items-center gap-3">
             <div class="flex flex-col items-center gap-1.5 shrink-0 w-20">
               <div class="w-full aspect-square rounded-md overflow-hidden bg-surface-high">
@@ -77,13 +78,14 @@
               </div>
             </div>
           </div>
-        </VarCard>
+        </VarPaper>
       </div>
 
       <template #finished>
-        <div v-if="rows.length === 0" class="rounded-lg bg-surface-container">
+        <VarPaper v-if="rows.length === 0" :elevation="0" :radius="16"
+          style="--paper-background: var(--md-surface-container)">
           <AppEmpty text="暂无本组织活动记录" />
-        </div>
+        </VarPaper>
         <p v-else class="py-4 text-center text-sm text-on-surface-variant">数据都被你榨干了…</p>
       </template>
 
@@ -107,9 +109,9 @@ import {
   BackTop as VarBackTop,
   Button as VarButton,
   Fab as VarFab,
-  Card as VarCard,
   Icon as VarIcon,
   List as VarList,
+  Paper as VarPaper,
 } from "@varlet/ui";
 import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel } from "@/api";
 import type { ActivityInfo, VolunteerActivityInfo } from "@/api";

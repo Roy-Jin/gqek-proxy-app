@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
     <div class="mb-3 flex items-center justify-between">
       <h3 class="text-base font-medium text-on-surface">接口连通性</h3>
       <VarButton type="primary" tonal size="small" :loading="running" @click="runAll">
@@ -22,12 +22,12 @@
         </span>
       </div>
     </div>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { Button as VarButton } from "@varlet/ui";
+import { Button as VarButton, Paper as VarPaper } from "@varlet/ui";
 import { getCaptchaImage, getInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
 import type { RequestResult } from "@/utils/request";

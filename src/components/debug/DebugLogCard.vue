@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
     <div class="mb-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-3">
         <h3 class="text-base font-medium text-on-surface">日志</h3>
@@ -29,11 +29,11 @@
         <p class="mt-1 break-all text-on-surface">{{ entry.args.join(' ') }}</p>
       </div>
     </div>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
-import { Button as VarButton, Checkbox as VarCheckbox } from "@varlet/ui";
+import { Button as VarButton, Checkbox as VarCheckbox, Paper as VarPaper } from "@varlet/ui";
 import { useDebugLog } from "@/utils/logger";
 
 const { logs, clearLogs, enabled } = useDebugLog();

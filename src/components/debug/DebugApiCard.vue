@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
     <h3 class="mb-3 text-base font-medium text-on-surface">API 调试</h3>
     <div class="flex gap-2">
       <VarSelect
@@ -41,12 +41,12 @@
       v-if="result"
       class="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-md bg-surface-high p-3 font-mono text-xs text-on-surface-variant"
     >{{ result }}</pre>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { Button as VarButton, Input as VarInput, Select as VarSelect } from "@varlet/ui";
+import { Button as VarButton, Input as VarInput, Paper as VarPaper, Select as VarSelect } from "@varlet/ui";
 import { http } from "@/api";
 import { useToast } from "@/composables/useToast";
 import { errorMessage } from "@/utils/error";

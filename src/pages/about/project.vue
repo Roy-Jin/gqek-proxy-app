@@ -26,7 +26,8 @@
 
     <!-- External links -->
     <p class="mb-2 mt-8 px-1 text-sm font-medium text-on-surface-variant">更多</p>
-    <div class="overflow-hidden rounded-lg bg-surface-container" :style="cellVars">
+    <VarPaper class="overflow-hidden" :elevation="0" :radius="16"
+      style="--paper-background: var(--md-surface-container)" :style="cellVars">
       <VarCell v-for="(link, index) in links" :key="link.label" :title="link.label" :description="link.description"
         ripple :border="index < links.length - 1" :border-offset="16" @click="openExternal(link.url)">
         <template #icon>
@@ -38,7 +39,7 @@
           <VarIcon name="share-outline" :size="18" class="text-on-surface-variant" />
         </template>
       </VarCell>
-    </div>
+    </VarPaper>
   </div>
 </template>
 
@@ -50,6 +51,7 @@ import {
   Cell as VarCell,
   Chip as VarChip,
   Icon as VarIcon,
+  Paper as VarPaper,
 } from "@varlet/ui";
 import { useAppUpdate } from "@/composables/useAppUpdate";
 import { useToast } from "@/composables/useToast";

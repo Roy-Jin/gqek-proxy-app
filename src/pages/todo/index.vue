@@ -27,7 +27,7 @@
       </VarCheckbox>
     </div>
 
-    <div class="mt-4 bg-surface-container rounded-lg overflow-hidden">
+    <VarPaper class="mt-4 overflow-hidden" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
       <!-- Loading skeleton -->
       <div v-if="loading && rows.length === 0" class="divide-y divide-outline-variant">
         <div v-for="i in 5" :key="i" class="animate-pulse space-y-2 p-4">
@@ -71,7 +71,7 @@
           <p class="py-4 text-center text-sm text-error">{{ errorMsg }}</p>
         </template>
       </VarList>
-    </div>
+    </VarPaper>
 
     <!-- Batch approval speed dial, only shown once something is selected -->
     <VarFab v-if="selectedIds.length > 0" v-model:active="fabActive" class="fab-inverse" :bottom="84" :right="16"
@@ -128,6 +128,7 @@ import {
   Icon as VarIcon,
   Input as VarInput,
   List as VarList,
+  Paper as VarPaper,
   Result as VarResult,
   Ripple as vRipple,
 } from "@varlet/ui";

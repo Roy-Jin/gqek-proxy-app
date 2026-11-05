@@ -18,7 +18,8 @@
       </div>
 
       <!-- Title header -->
-      <div class="bg-surface-container rounded-lg p-4 mt-4">
+      <VarPaper class="p-4 mt-4" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
         <div class="flex items-start justify-between gap-3">
           <h3 class="text-base font-semibold text-on-surface">{{ detail.activityName }}</h3>
           <span class="shrink-0 px-2 py-0.5 text-xs rounded bg-surface-high text-on-surface-variant">{{
@@ -29,10 +30,11 @@
             detail.activityClassifyName }}</span>
           <span v-if="detail.processName" class="text-xs text-on-surface-variant">{{ detail.processName }}</span>
         </div>
-      </div>
+      </VarPaper>
 
       <!-- Sign in / out -->
-      <div v-if="showSign" class="bg-surface-container rounded-lg p-4 mt-4">
+      <VarPaper v-if="showSign" class="p-4 mt-4" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
         <p class="text-sm font-semibold text-on-surface mb-3">签到管理</p>
         <div class="flex items-center justify-between py-2">
           <span class="text-sm text-on-surface">签到</span>
@@ -48,10 +50,11 @@
           <span>成员补签</span>
           <VarIcon name="chevron-right" :size="16" class="text-on-surface-variant" />
         </button>
-      </div>
+      </VarPaper>
 
       <!-- Basic info -->
-      <div class="bg-surface-container rounded-lg p-4 mt-4">
+      <VarPaper class="p-4 mt-4" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
         <p class="text-sm font-semibold text-on-surface mb-3">基本信息</p>
         <dl class="space-y-3 text-sm">
           <div class="flex">
@@ -79,10 +82,11 @@
             <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.fund }} 元</dd>
           </div>
         </dl>
-      </div>
+      </VarPaper>
 
       <!-- Time & location -->
-      <div class="bg-surface-container rounded-lg p-4 mt-4">
+      <VarPaper class="p-4 mt-4" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
         <p class="text-sm font-semibold text-on-surface mb-3">时间与地点</p>
         <dl class="space-y-3 text-sm">
           <div class="flex">
@@ -102,10 +106,11 @@
             <dd class="flex-1 min-w-0 text-on-surface text-right">{{ detail.activityLocation || '—' }}</dd>
           </div>
         </dl>
-      </div>
+      </VarPaper>
 
       <!-- Teachers -->
-      <div v-if="teachers.length" class="bg-surface-container rounded-lg p-4 mt-4">
+      <VarPaper v-if="teachers.length" class="p-4 mt-4" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
         <p class="text-sm font-semibold text-on-surface mb-3">指导老师</p>
         <ul class="space-y-2">
           <li v-for="(t, i) in teachers" :key="i"
@@ -114,24 +119,26 @@
             <span class="text-on-surface-variant text-xs shrink-0">{{ t.detail }}</span>
           </li>
         </ul>
-      </div>
+      </VarPaper>
 
       <!-- Class hours -->
-      <div v-if="classHours.length" class="bg-surface-container rounded-lg p-4 mt-4">
+      <VarPaper v-if="classHours.length" class="p-4 mt-4" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
         <p class="text-sm font-semibold text-on-surface mb-3">学时明细</p>
         <div class="flex flex-wrap gap-2">
           <span v-for="(h, i) in classHours" :key="i"
             class="px-2.5 py-1 text-xs rounded-lg bg-surface-high text-on-surface">{{ h }} 小时</span>
         </div>
-      </div>
+      </VarPaper>
 
       <!-- Description -->
-      <div v-if="detail.content || detail.purpose" class="bg-surface-container rounded-lg p-4 mt-4">
+      <VarPaper v-if="detail.content || detail.purpose" class="p-4 mt-4" :elevation="0" :radius="16"
+        style="--paper-background: var(--md-surface-container)">
         <p class="text-sm font-semibold text-on-surface mb-3">活动说明</p>
         <p class="text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-all">
           {{ detail.content || detail.purpose }}
         </p>
-      </div>
+      </VarPaper>
     </template>
 
     <MemberCountersignModal :open="showMembers" :activity-id="id" @close="showMembers = false" />
@@ -142,7 +149,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { definePage } from "vue-router/experimental";
-import { Icon as VarIcon, Loading as VarLoading, Switch as VarSwitch, Ripple as vRipple } from "@varlet/ui";
+import { Icon as VarIcon, Loading as VarLoading, Paper as VarPaper, Switch as VarSwitch, Ripple as vRipple } from "@varlet/ui";
 import { getActivityDetail, getVolunteerActivityDetail, signFlagChange, activityStatusLabel } from "@/api";
 import type { ActivityDetail } from "@/api";
 import { useToast } from "@/composables/useToast";

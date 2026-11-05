@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
     <div class="mb-3 flex items-center justify-between">
       <h3 class="text-base font-medium text-on-surface">本地存储</h3>
       <VarButton text size="small" @click="refresh">刷新</VarButton>
@@ -22,12 +22,12 @@
         </VarButton>
       </div>
     </div>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { Button as VarButton } from "@varlet/ui";
+import { Button as VarButton, Paper as VarPaper } from "@varlet/ui";
 import { STORE_KEY } from "@/stores/global";
 import { ACCOUNTS_STORE_KEY } from "@/stores/accounts";
 import { useToast } from "@/composables/useToast";

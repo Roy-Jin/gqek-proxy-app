@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 rounded-lg bg-surface-container p-4">
+  <VarPaper class="mb-4 p-4" :elevation="0" :radius="16" style="--paper-background: var(--md-surface-container)">
     <h3 class="mb-3 text-base font-medium text-on-surface">当前账号</h3>
     <div class="space-y-1.5 text-sm text-on-surface-variant">
       <p>姓名：{{ text(auth.user?.nickName) }}</p>
@@ -25,12 +25,12 @@
     <p v-if="tempKey" class="mt-1 text-xs text-on-surface-variant">
       有效期至 {{ tempKeyExpiry }}，仅在当前页面内存中保留
     </p>
-  </section>
+  </VarPaper>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { Button as VarButton } from "@varlet/ui";
+import { Button as VarButton, Paper as VarPaper } from "@varlet/ui";
 import { useAccountsStore } from "@/stores/accounts";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";

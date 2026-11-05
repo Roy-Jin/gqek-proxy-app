@@ -63,9 +63,12 @@
         v-for="item in navItems"
         :key="item.name"
         :name="item.name"
-        :icon="item.icon"
         :label="item.label"
-      />
+      >
+        <template #icon="{ active }">
+          <VarIcon :name="active ? item.iconActive : item.icon" />
+        </template>
+      </VarBottomNavigationItem>
     </VarBottomNavigation>
   </div>
 </template>
@@ -119,10 +122,18 @@ function back() {
   }
 }
 
-const navItems = [
-  { name: "activity", path: "/activity", label: "活动", icon: "calendar-month-outline" },
-  { name: "todo", path: "/todo", label: "待办", icon: "format-list-checkbox" },
-  { name: "about", path: "/about", label: "关于", icon: "information-outline" },
+interface NavItem {
+  name: "activity" | "todo" | "about";
+  path: string;
+  label: string;
+  icon: string;
+  iconActive: string;
+}
+
+const navItems: NavItem[] = [
+  { name: "activity", path: "/activity", label: "活动", icon: "home-outline", iconActive: "home" },
+  { name: "todo", path: "/todo", label: "待办", icon: "checkbox-marked-outline", iconActive: "checkbox-marked" },
+  { name: "about", path: "/about", label: "关于", icon: "information-outline", iconActive: "information" },
 ];
 
 const navActive = computed(
