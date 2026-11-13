@@ -13,6 +13,7 @@ export const ACTIVITY_STATUS: Record<number, string> = {
   6: "等待完结",
   7: "完结审核",
   10: "已完结",
+  98: "已取消",
 };
 
 export function activityStatusLabel(status: number): string {

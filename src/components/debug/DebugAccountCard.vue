@@ -23,7 +23,7 @@
       class="mt-3 select-all break-all rounded-md bg-surface-high p-3 font-mono text-xs text-on-surface-variant"
     >{{ tempKey }}</p>
     <p v-if="tempKey" class="mt-1 text-xs text-on-surface-variant">
-      有效期至 {{ tempKeyExpiry }}，仅在当前页面内存中保留
+      该密钥有效期至 {{ tempKeyExpiry }}
     </p>
   </VarPaper>
 </template>
@@ -34,6 +34,7 @@ import { Button as VarButton, Paper as VarPaper } from "@varlet/ui";
 import { useAccountsStore } from "@/stores/accounts";
 import { useGlobal } from "@/stores/global";
 import { useToast } from "@/composables/useToast";
+import { copyText } from "@/utils/clipboard";
 import { createTempKey } from "@/utils/tempKey";
 
 const auth = useGlobal();
@@ -54,15 +55,6 @@ function formatExpiry(ms: number): string {
     minute: "2-digit",
     hour12: false,
   });
-}
-
-async function copyText(value: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(value);
-    return true;
-  } catch {
-    return fallbackCopy(value);
-  }
 }
 
 async function exportKey() {
@@ -91,22 +83,5 @@ async function shareTempKey() {
   } else {
     toast.error("复制失败，请手动复制下方密钥");
   }
-}
-
-function fallbackCopy(value: string): boolean {
-  const ta = document.createElement("textarea");
-  ta.value = value;
-  ta.style.position = "fixed";
-  ta.style.opacity = "0";
-  document.body.appendChild(ta);
-  ta.select();
-  let ok = false;
-  try {
-    ok = document.execCommand("copy");
-  } catch {
-    ok = false;
-  }
-  document.body.removeChild(ta);
-  return ok;
 }
 </script>

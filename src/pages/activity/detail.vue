@@ -1,12 +1,4 @@
 <template>
-  <!-- Header action lives in the app bar but stays owned by this page -->
-  <Teleport to="#app-bar-action">
-    <VarButton v-if="detail" text round icon-container text-color="var(--md-on-surface)" aria-label="活动二维码" class="mr-2"
-      @click="openActivityQr">
-      <QrCode :size="20" />
-    </VarButton>
-  </Teleport>
-
   <div class="p-4 sm:p-6 max-w-2xl mx-auto">
     <div v-if="loading && !detail" class="flex flex-col items-center justify-center py-16 gap-4">
       <VarLoading type="circle" color="var(--md-primary)" />
@@ -58,6 +50,26 @@
           <template #icon>
             <span class="var-cell__icon text-on-surface-variant">
               <UsersRound :size="20" />
+            </span>
+          </template>
+          <template #extra>
+            <ChevronRight :size="20" class="text-on-surface-variant" />
+          </template>
+        </VarCell>
+        <VarCell title="报名二维码" description="扫码报名参加活动" border :border-offset="16" ripple @click="openActivityQr">
+          <template #icon>
+            <span class="var-cell__icon text-on-surface-variant">
+              <QrCode :size="20" />
+            </span>
+          </template>
+          <template #extra>
+            <ChevronRight :size="20" class="text-on-surface-variant" />
+          </template>
+        </VarCell>
+        <VarCell v-if="canAuditSignup" title="报名审核" description="审核报名待办" ripple @click="showSignupAudit = true">
+          <template #icon>
+            <span class="var-cell__icon text-on-surface-variant">
+              <ClipboardCheck :size="20" />
             </span>
           </template>
           <template #extra>
@@ -172,6 +184,8 @@
     <MemberManageModal :open="showMemberManage" :activity-id="id" :manageable="canManageMembers"
       :admin-name="detail?.studentName" :admin-phone="detail?.studentPhone" @close="showMemberManage = false"
       @changed="fetchDetail" />
+    <SignupAuditModal :open="showSignupAudit" :activity-id="id" :activity-name="detail?.activityName || ''"
+      @close="showSignupAudit = false" @changed="fetchDetail" />
   </div>
 </template>
 
@@ -179,9 +193,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { definePage } from "vue-router/experimental";
-import { CalendarClock, CalendarDays, ChevronRight, GraduationCap, Image, MapPin, QrCode, UserCheck, UserRoundPlus, UsersRound } from "@lucide/vue";
+import { CalendarClock, CalendarDays, ChevronRight, ClipboardCheck, GraduationCap, Image, MapPin, QrCode, UserCheck, UserRoundPlus, UsersRound } from "@lucide/vue";
 import {
-  Button as VarButton,
   Card as VarCard,
   Cell as VarCell,
   Chip as VarChip,
@@ -199,6 +212,7 @@ import { errorMessage } from "@/utils/error";
 import AppErrorState from "@/components/ui/AppErrorState.vue";
 import MemberCountersignModal from "@/components/activity/MemberCountersignModal.vue";
 import MemberManageModal from "@/components/activity/MemberManageModal.vue";
+import SignupAuditModal from "@/components/activity/SignupAuditModal.vue";
 
 definePage({ meta: { title: "活动详情" } });
 
@@ -285,12 +299,14 @@ const qrDisabled = computed(() => {
 });
 const showMembers = ref(false);
 const showMemberManage = ref(false);
+const showSignupAudit = ref(false);
 
-// Member add/remove is only allowed while the activity is between registration and completion
+// Member add/remove and signup audit are only available while 2 < status < 7
 const canManageMembers = computed(() => {
   const status = detail.value?.status ?? 0;
   return status > 2 && status < 7;
 });
+const canAuditSignup = computed(() => canManageMembers.value);
 
 const memberDescription = computed(() => {
   const count = detail.value?.memberNum ?? 0;

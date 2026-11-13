@@ -57,6 +57,23 @@
     <VarAlert v-if="switchError" type="danger" variant="tonal" :message="switchError" closeable class="mt-3"
       :style="alertVars" @close="resetError" />
 
+    <!-- Temp key: only shown for accounts signed in with password -->
+    <template v-if="canCreateTempKey">
+      <p class="mb-2 mt-6 px-1 text-sm font-medium text-on-surface-variant">临时密钥</p>
+      <VarPaper class="p-4" :elevation="0" :radius="16">
+        <p class="text-xs leading-relaxed text-on-surface-variant">
+          临时密钥在 {{ tempKeyMinutes }} 分钟内登录后方可长期使用
+        </p>
+        <VarButton type="primary" tonal block class="mt-3" @click="createShareKey">
+          生成临时密钥
+        </VarButton>
+        <template v-if="tempKey">
+          <p class="mt-3 select-all break-all rounded-md bg-surface-high p-3 font-mono text-xs text-on-surface-variant">{{ tempKey }}</p>
+          <p class="mt-1 text-xs text-on-surface-variant">该密钥有效期至 {{ tempKeyExpiry }}</p>
+        </template>
+      </VarPaper>
+    </template>
+
     <!-- Account actions -->
     <p class="mb-2 mt-6 px-1 text-sm font-medium text-on-surface-variant">账号操作</p>
     <VarButton type="primary" tonal block @click="addAccount">
@@ -98,6 +115,8 @@ import { useToast } from "@/composables/useToast";
 import { useAccountsStore } from "@/stores/accounts";
 import { Plus } from "@lucide/vue";
 import { useGlobal } from "@/stores/global";
+import { copyText } from "@/utils/clipboard";
+import { createTempKey, TEMP_KEY_TTL_MS } from "@/utils/tempKey";
 
 definePage({ meta: { title: "账号相关" } });
 
@@ -112,6 +131,11 @@ const { switchingId, errorMsg: switchError, savedAccounts, switchTo, resetError 
 
 const showLogoutConfirm = ref(false);
 const loggingOut = ref(false);
+
+const tempKey = ref("");
+const tempKeyExpiry = ref("");
+const tempKeyMinutes = Math.round(TEMP_KEY_TTL_MS / 60000);
+const canCreateTempKey = computed(() => auth.loginMethod === "account");
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(true);
@@ -171,6 +195,29 @@ function removeAccount(userId: string) {
 function addAccount() {
   resetError();
   session.beginAddAccount();
+}
+
+function formatExpiry(ms: number): string {
+  return new Date(ms).toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+async function createShareKey() {
+  if (!canCreateTempKey.value || !auth.token) {
+    toast.error("仅账号密码登录的账号可生成临时密钥");
+    return;
+  }
+  const { key, expiresAt } = createTempKey(auth.token);
+  tempKey.value = key;
+  tempKeyExpiry.value = formatExpiry(expiresAt);
+  if (await copyText(key)) {
+    toast.success(`临时密钥已复制，有效期至 ${tempKeyExpiry.value}`);
+  } else {
+    toast.error("复制失败，请手动复制下方密钥");
+  }
 }
 
 /** Bind the current account to its team; the role comes from memberFlag. */

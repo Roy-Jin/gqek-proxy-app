@@ -92,28 +92,18 @@
       </template>
     </VarList>
 
-    <!-- TODO: wire activity actions (create activity, etc.) into this fab later -->
-    <VarFab class="fab-inverse" :bottom="84" :right="16">
-      <template #trigger>
-        <VarButton var-fab-cover class="var-fab__trigger" icon-container>
-          <Plus :size="24" />
-        </VarButton>
-      </template>
-    </VarFab>
-
     <!-- Scroll target is the app shell's <main>, not the window -->
-    <VarBackTop target="main" :visibility-height="320" :right="16" :bottom="152" />
+    <VarBackTop target="main" :visibility-height="320" :right="16" :bottom="84" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { CalendarDays, CircleUser, Clock, Image, Plus, RefreshCw } from "@lucide/vue";
+import { CalendarDays, CircleUser, Clock, Image, RefreshCw } from "@lucide/vue";
 import {
   BackTop as VarBackTop,
   Button as VarButton,
-  Fab as VarFab,
   List as VarList,
   Paper as VarPaper,
 } from "@varlet/ui";

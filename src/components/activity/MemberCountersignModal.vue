@@ -53,16 +53,19 @@
       </p>
 
       <!-- Action bar -->
-      <div v-if="selectedIds.length > 0"
-        class="flex items-center gap-2 border-t border-outline-variant px-4 py-3 sm:px-5">
-        <VarCheckbox :model-value="allSelected" class="select-none text-sm" @change="toggleSelectAll">
-          全选
-        </VarCheckbox>
-        <span class="text-sm text-on-surface-variant">已选 <span class="font-semibold text-primary">{{ selectedIds.length
-            }}</span> 人</span>
-        <span class="flex-1"></span>
-        <VarButton type="primary" @click="doCountersign('0')">补签到</VarButton>
-        <VarButton type="danger" @click="doCountersign('1')">补签退</VarButton>
+      <div v-if="displayMembers.length > 0" class="border-t border-outline-variant px-4 py-3 sm:px-5">
+        <div class="flex items-center gap-3">
+          <VarCheckbox :model-value="allSelected" class="select-none text-sm" @change="toggleSelectAll">
+            全选
+          </VarCheckbox>
+          <span class="text-xs text-on-surface-variant">已选 {{ selectedIds.length }} / {{ displayMembers.length }}</span>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <VarButton class="flex-1" type="primary" :loading="countersigning" :disabled="selectedIds.length === 0"
+            @click="doCountersign('0')">补签到</VarButton>
+          <VarButton class="flex-1" type="danger" :loading="countersigning" :disabled="selectedIds.length === 0"
+            @click="doCountersign('1')">补签退</VarButton>
+        </div>
       </div>
     </div>
   </VarPopup>

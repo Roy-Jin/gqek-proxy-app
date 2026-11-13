@@ -1,11 +1,10 @@
 <template>
-  <div
-    class="min-h-full flex items-center justify-center p-4 sm:p-6 bg-surface"
-    style="padding-top: calc(1rem + env(safe-area-inset-top)); padding-bottom: calc(1rem + env(safe-area-inset-bottom)); padding-left: calc(1rem + env(safe-area-inset-left)); padding-right: calc(1rem + env(safe-area-inset-right))"
-  >
+  <div class="min-h-full flex items-center justify-center p-4 sm:p-6 bg-surface"
+    style="padding-top: calc(1rem + env(safe-area-inset-top)); padding-bottom: calc(1rem + env(safe-area-inset-bottom)); padding-left: calc(1rem + env(safe-area-inset-left)); padding-right: calc(1rem + env(safe-area-inset-right))">
     <div class="w-full max-w-md">
       <div class="text-center mb-6">
-        <div class="mx-auto h-12 w-12 rounded-lg bg-primary text-on-primary grid place-items-center text-xl font-bold">{{ env.app.logoText }}</div>
+        <div class="mx-auto h-12 w-12 rounded-lg bg-primary text-on-primary grid place-items-center text-xl font-bold">
+          {{ env.app.logoText }}</div>
         <h1 class="mt-3 text-[22px] leading-7 font-medium text-on-surface">{{ env.app.name }}</h1>
       </div>
 
@@ -13,35 +12,27 @@
         <AppSegmented :items="loginModes" :active="mode" block @change="setMode" />
 
         <form v-if="mode === 'account'" class="mt-4 flex flex-col gap-3" @submit.prevent="submit">
-          <VarInput v-model="form.username" variant="outlined" placeholder="请输入账号" clearable type="text"
+          <VarInput v-model.trim="form.username" variant="outlined" placeholder="请输入账号" clearable type="text"
             inputmode="numeric" aria-label="账号" />
-          <VarInput v-model="form.password" type="password" variant="outlined" placeholder="请输入密码" clearable
-            aria-label="密码" />
+          <VarInput v-model.trim="form.password" :type="passwordVisible ? 'text' : 'password'" variant="outlined"
+            placeholder="请输入密码" aria-label="密码">
+            <template #append-icon>
+              <VarButton text round icon-container size="small" text-color="var(--md-on-surface-variant)"
+                :aria-label="passwordVisible ? '隐藏密码' : '显示密码'" :aria-pressed="passwordVisible"
+                @click="passwordVisible = !passwordVisible">
+                <component :is="passwordVisible ? EyeClosed : Eye" :size="18" />
+              </VarButton>
+            </template>
+          </VarInput>
 
           <div class="flex items-stretch gap-2">
-            <VarInput
-              v-model="form.code"
-              variant="outlined"
-              placeholder="请输入验证码"
-              class="flex-1 min-w-0"
-              type="text"
-              inputmode="numeric"
-              aria-label="验证码"
-            />
-            <button
-              type="button"
-              class="captcha-tile shrink-0 grid place-items-center"
-              aria-label="点击刷新验证码"
-              :disabled="captchaLoading"
-              @click="fetchCaptcha"
-            >
-              <img
-                v-if="captchaImg"
-                :src="captchaImg"
-                alt="验证码"
-                class="block h-full w-full object-contain"
-                draggable="false"
-              />
+            <VarInput v-model.trim="form.code" variant="outlined" placeholder="请输入验证码" class="flex-1 min-w-0"
+              type="text" inputmode="numeric" aria-label="验证码" />
+            <button type="button"
+              class="w-32 shrink-0 grid place-items-center overflow-hidden rounded border border-outline bg-transparent transition-colors active:bg-surface-high disabled:opacity-60"
+              aria-label="点击刷新验证码" :disabled="captchaLoading" @click="fetchCaptcha">
+              <img v-if="captchaImg" :src="captchaImg" alt="验证码" class="block h-full w-full object-contain"
+                draggable="false" />
               <VarLoading v-else type="circle" size="mini" color="var(--md-primary)" />
             </button>
           </div>
@@ -52,14 +43,8 @@
         </form>
 
         <div v-else class="mt-4 flex flex-col gap-3">
-          <VarInput
-            v-model="manualToken"
-            textarea
-            :rows="3"
-            variant="outlined"
-            clearable
-            placeholder="粘贴密钥（无需 Bearer 前缀）"
-          />
+          <VarInput v-model.trim="manualToken" textarea :rows="3" variant="outlined" clearable
+            placeholder="粘贴密钥（无需 Bearer 前缀）" />
           <div class="flex gap-2">
             <VarButton type="primary" tonal size="large" class="shrink-0" @click="pasteToken">
               粘贴
@@ -82,22 +67,12 @@
       </div>
 
       <!-- Saved accounts dialog: hidden until requested -->
-      <VarDialog
-        :show="showAccounts"
-        title="切换账号"
-        :confirm-button="false"
-        :cancel-button="false"
-        close-on-click-overlay
-        @update:show="closeAccounts"
-      >
+      <VarDialog :show="showAccounts" title="切换账号" :confirm-button="false" :cancel-button="false" close-on-click-overlay
+        @update:show="closeAccounts">
         <div class="mt-1 max-h-64 space-y-2 overflow-auto">
-          <div
-            v-for="account in savedAccounts"
-            :key="account.userId"
-            v-ripple
+          <div v-for="account in savedAccounts" :key="account.userId" v-ripple
             class="relative flex items-center gap-2 overflow-hidden rounded-lg bg-surface-high p-3 cursor-pointer"
-            @click="switchTo(account.userId)"
-          >
+            @click="switchTo(account.userId)">
             <div class="min-w-0 flex-1">
               <p class="text-sm font-medium text-on-surface truncate">{{ account.userName || "未提供" }}</p>
               <p class="mt-0.5 text-xs text-on-surface-variant truncate">ID：{{ account.userId || "未提供" }}</p>
@@ -112,6 +87,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { Eye, EyeClosed } from "@lucide/vue";
 import {
   Button as VarButton,
   Dialog,
@@ -138,7 +114,7 @@ const toast = useToast();
 const session = useAccountSession();
 const { switchingId, errorMsg: switchError, savedAccounts, switchTo, resetError } = useAccountSwitch();
 
-const mode = ref<"account" | "key">("account");
+const mode = ref<"account" | "key">("key");
 const form = ref({ username: "", password: "", code: "" });
 const captchaImg = ref("");
 const captchaLoading = ref(false);
@@ -147,10 +123,11 @@ const loading = ref(false);
 const errorMsg = ref("");
 const manualToken = ref("");
 const showAccounts = ref(false);
+const passwordVisible = ref(false);
 
 const loginModes: { label: string; value: "account" | "key" }[] = [
-  { label: "账号登录", value: "account" },
   { label: "密钥登录", value: "key" },
+  { label: "账号登录", value: "account" },
 ];
 
 function closeAccounts() {
@@ -208,6 +185,7 @@ function submitToken() {
   }
 
   errorMsg.value = "";
+  auth.setLoginMethod("key");
   auth.setToken(token);
   auth.isAuthed = true;
   void session.refreshCurrentUser();
@@ -248,6 +226,7 @@ async function submit() {
       })
     ).data;
     if (body.code !== 200) throw new Error(body.msg || `登录失败（${body.code}）`);
+    auth.setLoginMethod("account");
     auth.setToken(body.data.token);
     auth.isAuthed = true;
     void session.refreshCurrentUser();
@@ -263,23 +242,3 @@ async function submit() {
 
 onMounted(fetchCaptcha);
 </script>
-
-<style scoped>
-/* Captcha tile mirrors the outlined input: same border, radius and stretched height */
-.captcha-tile {
-  width: 128px;
-  overflow: hidden;
-  border: 1px solid var(--md-outline);
-  border-radius: 8px;
-  background: transparent;
-  transition: background-color var(--md-motion-fast) var(--md-ease-standard);
-}
-
-.captcha-tile:active:not(:disabled) {
-  background: var(--md-surface-high);
-}
-
-.captcha-tile:disabled {
-  opacity: 0.6;
-}
-</style>

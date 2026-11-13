@@ -47,7 +47,7 @@ export function useAccountSession() {
 
   function rememberCurrent() {
     if (!auth.user) return;
-    accounts.remember(auth.user, auth.token);
+    accounts.remember(auth.user, auth.token, auth.loginMethod || undefined);
   }
 
   /** Refresh profile fields for the active token; keep old values when offline. */
@@ -56,7 +56,7 @@ export function useAccountSession() {
     try {
       const user = await fetchUserInfo(auth.token);
       auth.setUser(user);
-      accounts.remember(user, auth.token);
+      accounts.remember(user, auth.token, auth.loginMethod || undefined);
     } catch {
       /* About page falls back to placeholders when fields are missing. */
     }
@@ -66,10 +66,11 @@ export function useAccountSession() {
   async function switchAccount(account: SavedAccount) {
     const user = await fetchUserInfo(account.token);
     auth.setToken(account.token);
+    auth.setLoginMethod(account.loginMethod ?? "");
     auth.setUser(user);
     auth.isAuthed = true;
     auth.authChecked = true;
-    accounts.remember(user, account.token);
+    accounts.remember(user, account.token, auth.loginMethod || undefined);
     window.location.reload();
   }
 

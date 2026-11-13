@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { UserBrief } from "./global";
+import type { LoginMethod, UserBrief } from "./global";
 
 export const ACCOUNTS_STORE_KEY = "app-accounts";
 
@@ -7,6 +7,8 @@ export interface SavedAccount extends UserBrief {
   /** Bearer token; persisted locally, never rendered or logged. */
   token: string;
   lastUsedAt: number;
+  /** Login method of this account; accounts without it cannot mint temp keys. */
+  loginMethod?: LoginMethod;
 }
 
 /** Token-free view model for any UI that lists saved accounts. */
@@ -31,11 +33,17 @@ export const useAccountsStore = defineStore("accounts", {
         })),
   },
   actions: {
-    remember(user: UserBrief, token: string) {
+    remember(user: UserBrief, token: string, loginMethod?: LoginMethod) {
       const id = user.userId;
       if (!id || !token) return;
-      const record: SavedAccount = { ...user, token, lastUsedAt: Date.now() };
       const index = this.accounts.findIndex((item) => item.userId === id);
+      const previous = index >= 0 ? this.accounts[index]?.loginMethod : undefined;
+      const record: SavedAccount = {
+        ...user,
+        token,
+        lastUsedAt: Date.now(),
+        loginMethod: loginMethod ?? previous,
+      };
       if (index >= 0) {
         this.accounts[index] = record;
       } else {

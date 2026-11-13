@@ -2,6 +2,9 @@ import { defineStore } from "pinia";
 
 export const STORE_KEY = "app-global";
 
+/** How the current session was established; only "account" may mint temp keys. */
+export type LoginMethod = "account" | "key";
+
 export interface UserBrief {
   userName: string;
   /** Student number / account identifier from /getInfo; the only displayed account label */
@@ -23,11 +26,15 @@ export const useGlobal = defineStore("global", {
     token: "",
     isAuthed: false,
     authChecked: false,
+    loginMethod: "" as LoginMethod | "",
     user: null as UserBrief | null,
   }),
   actions: {
     setToken(value: string) {
       this.token = value.trim();
+    },
+    setLoginMethod(value: LoginMethod | "") {
+      this.loginMethod = value;
     },
     setUser(user: UserBrief) {
       this.user = user;
@@ -37,6 +44,7 @@ export const useGlobal = defineStore("global", {
       this.token = "";
       this.isAuthed = false;
       this.authChecked = true;
+      this.loginMethod = "";
       this.user = null;
     },
     /** Destroy the persisted auth credentials and reset the application state. */
