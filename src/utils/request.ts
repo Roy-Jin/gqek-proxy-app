@@ -3,15 +3,20 @@
  */
 
 import {
-  generateAesKey,
-  buildEncryptFlag,
-  aesEcbEncrypt,
   aesEcbDecrypt,
+  aesEcbEncrypt,
+  axiosDecrypt,
+  buildEncryptFlag,
+  generateAesKey,
   md5,
   rsaEncrypt,
-  axiosDecrypt,
 } from "./crypto.js";
 import { errorMessage } from "./error.js";
+import {
+  NativeHttpError,
+  canUseNativeHttp,
+  nativeHttpRequest,
+} from "./nativeBridge.js";
 
 /* ==================== 类型 ==================== */
 
@@ -109,7 +114,7 @@ function toStringHeaders(h: HeadersRecord): Record<string, string> {
 /* ==================== 核心请求 ==================== */
 
 export async function request<T = unknown>(
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<RequestResult<T>> {
   const {
     baseUrl = "",
@@ -146,7 +151,8 @@ export async function request<T = unknown>(
   }
 
   // Explicit token wins so scripts without an active pinia store can authenticate.
-  const realToken = token || (typeof getToken === "function" ? getToken() : undefined);
+  const realToken = token ||
+    (typeof getToken === "function" ? getToken() : undefined);
   if (tokenFlag && realToken) {
     finalHeaders["Authorization"] = "Bearer " + realToken;
   }
@@ -162,7 +168,9 @@ export async function request<T = unknown>(
       | Record<string, unknown>
       | null
       | undefined;
-    if (source && typeof source === "object" && Object.keys(source).length > 0) {
+    if (
+      source && typeof source === "object" && Object.keys(source).length > 0
+    ) {
       const plainQuery = tansParams(source).slice(0, -1);
       let cipher: string;
       if (needEncrypt) {
@@ -223,33 +231,75 @@ export async function request<T = unknown>(
 
   console.log(`[http] ${httpMethod.toUpperCase()} ${reqUrl}`);
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
+  const fullUrl = baseUrl + reqUrl;
+  const sentHeaders = toStringHeaders(finalHeaders);
+  // WebToApp's CORS-bypass wrapper retries a rejected fetch through the native
+  // bridge, which submits cross-origin POSTs twice; talk to the bridge directly.
+  const useNativeHttp =
+    canUseNativeHttp() && (reqBody === undefined || typeof reqBody === "string");
 
-  let resp: Response;
-  try {
-    resp = await fetch(baseUrl + reqUrl, {
-      method: httpMethod.toUpperCase(),
-      headers: toStringHeaders(finalHeaders),
-      body: reqBody,
-      signal: controller.signal,
-    });
-  } catch (e: unknown) {
-    clearTimeout(timer);
-    if (e instanceof Error && e.name === "AbortError") {
-      throw new Error("系统接口请求超时");
+  let status: number;
+  let ok: boolean;
+  let respHeaders: Record<string, string>;
+  let raw: string;
+
+  if (useNativeHttp) {
+    try {
+      const res = await nativeHttpRequest(
+        {
+          url: fullUrl,
+          method: httpMethod.toUpperCase(),
+          headers: sentHeaders,
+          body: reqBody as string | undefined,
+        },
+        timeout,
+      );
+      status = res.status;
+      ok = status >= 200 && status < 300;
+      respHeaders = res.headers;
+      raw = res.text;
+    } catch (e) {
+      if (e instanceof NativeHttpError) {
+        throw new Error(
+          e.timedOut ? "系统接口请求超时" : "后端接口连接异常: " + e.message,
+        );
+      }
+      throw new Error("后端接口连接异常: " + errorMessage(e));
     }
-    throw new Error("后端接口连接异常: " + errorMessage(e));
+  } else {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+
+    let resp: Response;
+    try {
+      resp = await fetch(fullUrl, {
+        method: httpMethod.toUpperCase(),
+        headers: sentHeaders,
+        body: reqBody,
+        signal: controller.signal,
+      });
+    } catch (e: unknown) {
+      clearTimeout(timer);
+      if (e instanceof Error && e.name === "AbortError") {
+        throw new Error("系统接口请求超时");
+      }
+      throw new Error("后端接口连接异常: " + errorMessage(e));
+    }
+    clearTimeout(timer);
+
+    status = resp.status;
+    ok = resp.ok;
+    raw = await resp.text();
+    respHeaders = {};
+    resp.headers.forEach((value, key) => {
+      respHeaders[key] = value;
+    });
   }
-  clearTimeout(timer);
 
   /* ---------- 5. 响应解密 ---------- */
 
-  const raw = await resp.text();
-  console.log(`[http] ${resp.status} ${httpMethod.toUpperCase()} ${reqUrl}`);
-  const encHeader = resp.headers.get("encrypt-response");
-  const encryptedResponse =
-    String(encHeader || "").toLowerCase() === "true";
+  const encHeader = respHeaders["encrypt-response"];
+  const encryptedResponse = String(encHeader || "").toLowerCase() === "true";
 
   let decoded: string = raw;
   if (aesKey && encryptedResponse && raw) {
@@ -269,30 +319,29 @@ export async function request<T = unknown>(
 
   // 固定 key/iv 的 AES-CBC 二次处理
   body = axiosDecrypt(body);
+  console.log(
+    "[body]",
+    (body as { code?: string }).code,
+    (body as { msg?: string }).msg,
+  );
 
   /* ---------- 6. 会话失效回调 ---------- */
 
   // Only authenticated requests can expire a session; anonymous calls keep their own errors.
   if (tokenFlag && realToken && onUnauthorized) {
-    const businessCode =
-      body && typeof body === "object"
-        ? (body as { code?: unknown }).code
-        : undefined;
-    if (resp.status === 401 || String(businessCode) === "401") {
+    const businessCode = body && typeof body === "object"
+      ? (body as { code?: unknown }).code
+      : undefined;
+    if (status === 401 || String(businessCode) === "401") {
       onUnauthorized(realToken);
     }
   }
 
   /* ---------- 7. 返回 ---------- */
 
-  const respHeaders: Record<string, string> = {};
-  resp.headers.forEach((value, key) => {
-    respHeaders[key] = value;
-  });
-
   return {
-    ok: resp.ok,
-    status: resp.status,
+    ok,
+    status,
     headers: respHeaders,
     data: body as T,
     raw,
@@ -317,25 +366,25 @@ export function createClient(defaults: CreateClientDefaults = {}) {
     get: <T = unknown>(
       url: string,
       params?: Record<string, unknown>,
-      opts: RequestOptions = {}
+      opts: RequestOptions = {},
     ) => request<T>(merged({ ...opts, method: "get", url, params })),
 
     post: <T = unknown>(
       url: string,
       data?: unknown,
-      opts: RequestOptions = {}
+      opts: RequestOptions = {},
     ) => request<T>(merged({ ...opts, method: "post", url, data })),
 
     put: <T = unknown>(
       url: string,
       data?: unknown,
-      opts: RequestOptions = {}
+      opts: RequestOptions = {},
     ) => request<T>(merged({ ...opts, method: "put", url, data })),
 
     delete: <T = unknown>(
       url: string,
       data?: unknown,
-      opts: RequestOptions = {}
+      opts: RequestOptions = {},
     ) => request<T>(merged({ ...opts, method: "delete", url, data })),
   };
 }

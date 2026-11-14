@@ -14,6 +14,11 @@ export interface BridgeAppInfo {
 declare global {
   interface Window {
     NativeBridge?: Record<string, (...args: unknown[]) => unknown>;
+    /** Injected by WebToApp's CORS-bypass script; CORS_BYPASS when enabled. */
+    __wta_private_network_scope__?: string;
+    /** Async native HTTP mailbox shared with WebToApp's own fetch wrapper. */
+    __wtaNativeHttpPending?: Record<string, (raw: string) => void>;
+    __wtaNativeHttpResponse?: (id: string, raw: string) => void;
   }
 }
 
@@ -130,4 +135,164 @@ export function nativeToast(message: string) {
  */
 export function nativeOpen(target: string) {
   return callNativeVoid("openUrl", target);
+}
+
+/* ==================== Native HTTP transport ==================== */
+
+export interface NativeHttpRequest {
+  url: string;
+  method: string;
+  headers?: Record<string, string>;
+  /** Plain-text body; the bridge payload carries it as base64. */
+  body?: string;
+}
+
+export interface NativeHttpResult {
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  text: string;
+}
+
+/** Bridge failures, split so callers can keep the timeout message distinct. */
+export class NativeHttpError extends Error {
+  readonly timedOut: boolean;
+
+  constructor(message: string, timedOut = false) {
+    super(message);
+    this.name = "NativeHttpError";
+    this.timedOut = timedOut;
+  }
+}
+
+interface BridgeHttpReply {
+  ok?: boolean;
+  status?: number;
+  statusText?: string;
+  headers?: Record<string, string>;
+  bodyBase64?: string;
+  message?: string;
+  error?: string;
+}
+
+let httpSeq = 0;
+
+/**
+ * WebToApp >= 2.8.8 wraps window.fetch in CORS-bypass mode: it runs the WebView
+ * fetch first and retries through the native bridge once that rejects. Since a
+ * cross-origin response without CORS headers still reaches the server, a POST
+ * gets submitted twice (the duplicate is rejected by repeat-submit filters).
+ * Under those conditions requests go straight to the bridge instead.
+ */
+export function canUseNativeHttp(): boolean {
+  const bridge = getBridge();
+  if (!bridge || typeof bridge.httpRequestAsync !== "function") return false;
+  return window.__wta_private_network_scope__ === "CORS_BYPASS";
+}
+
+function textToBase64(text: string): string {
+  let binary = "";
+  for (const byte of new TextEncoder().encode(text)) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
+
+function base64ToText(base64: string): string {
+  const binary = atob(base64 || "");
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/** Native delivers replies through a page-global callback keyed by request id. */
+function httpMailbox(): Record<string, (raw: string) => void> {
+  window.__wtaNativeHttpPending ??= {};
+  window.__wtaNativeHttpResponse ??= (id, raw) => {
+    const settle = window.__wtaNativeHttpPending?.[id];
+    if (!settle) return;
+    delete window.__wtaNativeHttpPending?.[id];
+    settle(raw);
+  };
+  return window.__wtaNativeHttpPending;
+}
+
+function parseHttpReply(raw: string): NativeHttpResult {
+  let reply: BridgeHttpReply;
+  try {
+    reply = JSON.parse(raw || "{}") as BridgeHttpReply;
+  } catch {
+    throw new NativeHttpError("原生网络桥返回了无法解析的数据");
+  }
+  if (!reply.ok) {
+    throw new NativeHttpError(reply.message || reply.error || "原生网络桥请求失败");
+  }
+  const headers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(reply.headers ?? {})) {
+    headers[key.toLowerCase()] = String(value);
+  }
+  return {
+    status: Number(reply.status || 0),
+    statusText: String(reply.statusText || ""),
+    headers,
+    text: base64ToText(String(reply.bodyBase64 || "")),
+  };
+}
+
+/** Send an HTTP request through NativeBridge.httpRequestAsync (no CORS check). */
+export function nativeHttpRequest(
+  options: NativeHttpRequest,
+  timeoutMs = 30000,
+): Promise<NativeHttpResult> {
+  const bridge = getBridge();
+  const call = bridge?.httpRequestAsync;
+  if (!bridge || typeof call !== "function") {
+    return Promise.reject(new NativeHttpError("原生网络桥不可用"));
+  }
+
+  const pending = httpMailbox();
+  const id = `h${(httpSeq += 1)}_${Date.now()}`;
+  const payload = JSON.stringify({
+    url: options.url,
+    method: options.method.toUpperCase(),
+    headers: options.headers ?? {},
+    bodyBase64: options.body ? textToBase64(options.body) : "",
+  });
+
+  return new Promise<NativeHttpResult>((resolve, reject) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const finish = (action: () => void) => {
+      if (settled) return;
+      settled = true;
+      if (timer !== undefined) clearTimeout(timer);
+      delete pending[id];
+      action();
+    };
+
+    timer = setTimeout(() => {
+      finish(() => reject(new NativeHttpError("系统接口请求超时", true)));
+    }, timeoutMs);
+
+    pending[id] = (raw) => {
+      let reply: NativeHttpResult;
+      try {
+        reply = parseHttpReply(raw);
+      } catch (e) {
+        finish(() => reject(e));
+        return;
+      }
+      finish(() => resolve(reply));
+    };
+
+    try {
+      Reflect.apply(call, bridge, [payload, id]);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      finish(() => reject(new NativeHttpError(message)));
+    }
+  });
 }

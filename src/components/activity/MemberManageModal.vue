@@ -311,11 +311,11 @@ async function doAdd() {
     showFeedback.value = true;
     backToList();
     emit("changed");
-    fetchMembers();
   } catch (e) {
     feedback.value = { type: "error", title: "添加失败", description: errorMessage(e) };
     showFeedback.value = true;
   } finally {
+    fetchMembers();
     adding.value = false;
   }
 }
@@ -347,12 +347,12 @@ async function doRemove() {
     showRemoveConfirm.value = false;
     pendingRemove.value = null;
     emit("changed");
-    fetchMembers();
   } catch (e) {
     feedback.value = { type: "error", title: "移除失败", description: errorMessage(e) };
     showFeedback.value = true;
   } finally {
-    removing.value = false;
+    fetchMembers();
+    removing.value = false;  
   }
 }
 

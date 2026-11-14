@@ -190,11 +190,11 @@ async function runAudit() {
     };
     showFeedback.value = true;
     emit("changed");
-    fetchList();
   } catch (e) {
     feedback.value = { type: "error", title: "操作失败", description: errorMessage(e) };
     showFeedback.value = true;
   } finally {
+    fetchList();
     approving.value = false;
   }
 }

@@ -210,7 +210,6 @@ async function doCountersign(signType: string) {
       description: `已为 ${count} 名成员${action}`,
     };
     showFeedback.value = true;
-    fetchList();
   } catch (e) {
     feedback.value = {
       type: "error",
@@ -219,6 +218,7 @@ async function doCountersign(signType: string) {
     };
     showFeedback.value = true;
   } finally {
+    fetchList();
     countersigning.value = false;
   }
 }
