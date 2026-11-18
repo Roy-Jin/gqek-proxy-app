@@ -63,6 +63,21 @@ export interface CreateClientDefaults {
 
 /* ==================== 工具函数 ==================== */
 
+/** Returns true when the browser reports no network connectivity. */
+function deviceOffline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+/**
+ * Pick a human-readable error cause. When the device is offline we must not
+ * blame the server — that sends users down the wrong troubleshooting path.
+ */
+function transportErrorMessage(cause: unknown): string {
+  if (deviceOffline()) return "网络不可用，请检查您的网络连接";
+  const detail = errorMessage(cause);
+  return "后端接口连接异常: " + detail;
+}
+
 /** 对应原 g.tansParams：返回 "k=v&k=v&"（末尾带 &），跳过 undefined/null */
 function tansParams(obj: Record<string, unknown>): string {
   let s = "";
@@ -261,10 +276,10 @@ export async function request<T = unknown>(
     } catch (e) {
       if (e instanceof NativeHttpError) {
         throw new Error(
-          e.timedOut ? "系统接口请求超时" : "后端接口连接异常: " + e.message,
+          e.timedOut ? "系统接口请求超时" : transportErrorMessage(e),
         );
       }
-      throw new Error("后端接口连接异常: " + errorMessage(e));
+      throw new Error(transportErrorMessage(e));
     }
   } else {
     const controller = new AbortController();
@@ -283,7 +298,7 @@ export async function request<T = unknown>(
       if (e instanceof Error && e.name === "AbortError") {
         throw new Error("系统接口请求超时");
       }
-      throw new Error("后端接口连接异常: " + errorMessage(e));
+      throw new Error(transportErrorMessage(e));
     }
     clearTimeout(timer);
 

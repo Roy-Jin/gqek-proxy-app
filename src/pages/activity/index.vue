@@ -16,6 +16,9 @@
           <div class="h-4 rounded bg-surface-high w-3/4 animate-pulse"></div>
           <div class="h-3 rounded bg-surface-high w-1/2 animate-pulse"></div>
           <div class="h-3 rounded bg-surface-high w-2/3 animate-pulse"></div>
+          <div class="h-3 rounded bg-surface-high w-2/3 animate-pulse"></div>
+          <div class="h-3 rounded bg-surface-high w-2/3 animate-pulse"></div>
+          <div class="h-3 rounded bg-surface-high w-2/3 animate-pulse"></div>
         </div>
       </VarPaper>
     </div>
@@ -27,8 +30,8 @@
     <VarList v-else v-model:loading="loadingMore" :finished="noMore" :error="!!errorMsg" loading-text="加载中..."
       :offset="80" class="mt-3" @load="loadMore">
       <div class="space-y-3">
-        <VarPaper v-for="item in rows" :key="item.activityId" :elevation="0" :radius="16" ripple
-          class="p-3" @click="openDetail(item)">
+        <VarPaper v-for="item in rows" :key="item.activityId" :elevation="0" :radius="16" ripple class="p-3"
+          @click="openDetail(item)">
           <div class="flex items-center gap-3">
             <div class="flex flex-col items-center gap-1.5 shrink-0 w-20">
               <div class="w-full aspect-square rounded-md overflow-hidden bg-surface-high">
@@ -38,10 +41,9 @@
                   <Image :size="24" />
                 </div>
               </div>
-              <span
-                class="rounded-full bg-surface-high px-2.5 py-1 text-[11px] text-on-surface-variant whitespace-nowrap">
+              <VarChip :type="activityStatusChipType(item.status)" size="small">
                 {{ activityStatusLabel(item.status) }}
-              </span>
+              </VarChip>
             </div>
 
             <div class="flex-1 min-w-0 flex flex-col">
@@ -82,7 +84,10 @@
       </template>
 
       <template #error>
-        <p class="py-4 text-center text-sm text-error">{{ errorMsg }}</p>
+        <div class="py-4 flex flex-col items-center gap-2">
+          <p class="text-sm text-error">{{ errorMsg }}</p>
+          <VarButton size="small" text @click="retryLoadMore">点此重试</VarButton>
+        </div>
       </template>
     </VarList>
 
@@ -97,11 +102,13 @@ import { useRoute, useRouter } from "vue-router";
 import { CalendarDays, CircleUser, Clock, Image } from "@lucide/vue";
 import {
   BackTop as VarBackTop,
+  Button as VarButton,
+  Chip as VarChip,
   List as VarList,
   Paper as VarPaper,
   PullRefresh as VarPullRefresh,
 } from "@varlet/ui";
-import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel } from "@/api";
+import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel, activityStatusChipType } from "@/api";
 import type { ActivityInfo, VolunteerActivityInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
 import { errorMessage } from "@/utils/error";
@@ -318,6 +325,13 @@ function switchTab(v: ActivityTab) {
 function refresh() {
   if (loading.value) return;
   initTab();
+}
+
+/** Retry one failed incremental load while keeping existing rows. */
+function retryLoadMore() {
+  if (loading.value || loadingMore.value) return;
+  errorMsg.value = "";
+  loadMore();
 }
 
 /** Pull-to-refresh restarts the active tab from page 1. */

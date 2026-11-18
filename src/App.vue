@@ -185,6 +185,7 @@ async function checkAuth() {
 }
 
 onMounted(() => {
+  auth.bindNetworkListener();
   checkAuth();
   // Always check at startup; with auto check off the dialog stays closed and only
   // the update badge on the about page is refreshed

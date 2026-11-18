@@ -20,6 +20,18 @@ export function activityStatusLabel(status: number): string {
   return ACTIVITY_STATUS[status] ?? `状态 ${status}`;
 }
 
+/** Semantic chip type for VarChip; consistent across list + detail. */
+export type ActivityStatusChipType = "default" | "primary" | "success" | "warning" | "info" | "danger";
+
+export function activityStatusChipType(status: number): ActivityStatusChipType {
+  if (status === 10) return "success";
+  if (status === 5) return "primary";
+  if (status === 98) return "danger";
+  if (status === 1 || status === 6 || status === 7) return "warning";
+  if (status >= 2 && status <= 4) return "info";
+  return "default";
+}
+
 /** My activity list query params */
 export interface MyActivityParams {
   /** Page size */

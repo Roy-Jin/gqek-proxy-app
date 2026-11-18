@@ -27,7 +27,7 @@
                 </h1>
                 <!-- <p class="mt-1.5 truncate text-sm text-white/75">{{ detail.maintainerName || '—' }}</p> -->
               </div>
-              <VarChip class="shrink-0" :type="statusChipType" size="small">
+              <VarChip class="shrink-0" :type="activityStatusChipType(detail.status)" size="small">
                 {{ activityStatusLabel(detail.status) }}
               </VarChip>
             </div>
@@ -205,7 +205,7 @@ import {
   Select as VarSelect,
 } from "@varlet/ui";
 import encodeQR from "qr";
-import { getActivityDetail, getVolunteerActivityDetail, getSignQrCode, signFlagChange, activityStatusLabel } from "@/api";
+import { getActivityDetail, getVolunteerActivityDetail, getSignQrCode, signFlagChange, activityStatusLabel, activityStatusChipType } from "@/api";
 import type { LucideIcon } from "@lucide/vue";
 import type { ActivityDetail } from "@/api";
 import { useToast } from "@/composables/useToast";
@@ -216,8 +216,6 @@ import MemberManageModal from "@/components/activity/MemberManageModal.vue";
 import SignupAuditModal from "@/components/activity/SignupAuditModal.vue";
 
 definePage({ meta: { title: "活动详情" } });
-
-type ChipType = "default" | "primary" | "info" | "success" | "warning" | "danger";
 
 interface InfoItem {
   label: string;
@@ -242,15 +240,6 @@ const cover = computed(() => detail.value?.activityAvatarImg || detail.value?.ac
 const hasCover = computed(() => !!(cover.value && !imgError.value));
 const duration = computed(() => detail.value?.serviceTime || detail.value?.attendTime || "");
 const limitPeople = computed(() => detail.value?.activitiyLimitInfoVo?.limitPeople ?? null);
-
-const statusChipType = computed<ChipType>(() => {
-  const status = detail.value?.status ?? 0;
-  if (status === 10) return "success";
-  if (status === 5) return "primary";
-  if (status === 1 || status === 6 || status === 7) return "warning";
-  if (status >= 2 && status <= 4) return "info";
-  return "default";
-});
 
 const basicInfo = computed<InfoItem[]>(() => {
   const d = detail.value;

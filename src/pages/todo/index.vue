@@ -31,6 +31,10 @@
         </div>
       </div>
 
+      <!-- First load failed -->
+      <AppErrorState v-else-if="errorMsg && rows.length === 0" class="p-4" :message="errorMsg"
+        @retry="refresh" />
+
       <!-- Message list: VarList pulls the next batch when the detector reaches the end -->
       <VarList v-else v-model:loading="loadingMore" :finished="noMore" :error="!!errorMsg" loading-text="加载中..."
         :offset="80" @load="loadMore">
@@ -62,7 +66,10 @@
         </template>
 
         <template #error>
-          <p class="py-4 text-center text-sm text-error">{{ errorMsg }}</p>
+          <div class="py-4 flex flex-col items-center gap-2">
+            <p class="text-sm text-error">{{ errorMsg }}</p>
+            <VarButton size="small" text @click="retryLoadMore">点此重试</VarButton>
+          </div>
         </template>
       </VarList>
     </VarPaper>
@@ -136,6 +143,7 @@ import type { TodoMessage } from "@/api";
 import { useMultiSelect } from "@/composables/useMultiSelect";
 import { errorMessage } from "@/utils/error";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
+import AppErrorState from "@/components/ui/AppErrorState.vue";
 import AppSegmented from "@/components/ui/AppSegmented.vue";
 
 // `Dialog` is Varlet's imperative API; the render component lives on `.Component`
@@ -275,6 +283,19 @@ function switchTab(status: number) {
 async function onPullRefresh() {
   if (!loading.value) await fetchBatch(true);
   refreshing.value = false;
+}
+
+/** Full restart from page 1; wired to AppErrorState retry. */
+function refresh() {
+  if (loading.value) return;
+  fetchBatch(true);
+}
+
+/** Retry one failed incremental load while keeping existing rows. */
+function retryLoadMore() {
+  if (loading.value || loadingMore.value) return;
+  errorMsg.value = "";
+  loadMore();
 }
 
 function confirmAudit() {

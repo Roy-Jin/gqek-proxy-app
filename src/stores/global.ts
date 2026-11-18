@@ -21,6 +21,11 @@ export interface UserBrief {
   roles?: string[];
 }
 
+function readInitialOnline(): boolean {
+  if (typeof navigator === "undefined") return true;
+  return navigator.onLine;
+}
+
 export const useGlobal = defineStore("global", {
   state: () => ({
     token: "",
@@ -28,8 +33,23 @@ export const useGlobal = defineStore("global", {
     authChecked: false,
     loginMethod: "" as LoginMethod | "",
     user: null as UserBrief | null,
+    /** Whether the device has a network connection (navigator.onLine). */
+    isOnline: readInitialOnline(),
   }),
   actions: {
+    /** Bind window online/offline events to keep isOnline in sync. Safe to call multiple times. */
+    bindNetworkListener() {
+      if (typeof window === "undefined") return;
+      const self = this as unknown as { _netBound?: boolean };
+      if (self._netBound) return;
+      self._netBound = true;
+      window.addEventListener("online", () => {
+        this.isOnline = true;
+      });
+      window.addEventListener("offline", () => {
+        this.isOnline = false;
+      });
+    },
     setToken(value: string) {
       this.token = value.trim();
     },
