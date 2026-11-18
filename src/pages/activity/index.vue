@@ -1,14 +1,8 @@
 <template>
-  <div class="p-4 max-w-3xl mx-auto">
-    <div class="flex items-start justify-between gap-3 mb-4">
-      <div>
-        <h2 class="text-[22px] leading-7 font-medium text-on-surface">活动</h2>
-        <p class="mt-1 text-sm text-on-surface-variant">本组织主办的活动</p>
-      </div>
-      <VarButton text type="primary" size="small" :loading="loading" @click="refresh">
-        <RefreshCw :size="16" class="mr-1" />
-        刷新
-      </VarButton>
+  <VarPullRefresh v-model="refreshing" class="p-4 max-w-3xl mx-auto" target="main" @refresh="onPullRefresh">
+    <div class="mb-4">
+      <h2 class="text-[22px] leading-7 font-medium text-on-surface">活动</h2>
+      <p class="mt-1 text-sm text-on-surface-variant">本组织主办的活动</p>
     </div>
 
     <!-- Tabs -->
@@ -94,18 +88,18 @@
 
     <!-- Scroll target is the app shell's <main>, not the window -->
     <VarBackTop target="main" :visibility-height="320" :right="16" :bottom="84" />
-  </div>
+  </VarPullRefresh>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { CalendarDays, CircleUser, Clock, Image, RefreshCw } from "@lucide/vue";
+import { CalendarDays, CircleUser, Clock, Image } from "@lucide/vue";
 import {
   BackTop as VarBackTop,
-  Button as VarButton,
   List as VarList,
   Paper as VarPaper,
+  PullRefresh as VarPullRefresh,
 } from "@varlet/ui";
 import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel } from "@/api";
 import type { ActivityInfo, VolunteerActivityInfo } from "@/api";
@@ -154,6 +148,7 @@ const activeTab = ref<ActivityTab>(parseTab(route.query.tab));
 const rows = ref<ActivityItem[]>([]);
 const loading = ref(false);
 const loadingMore = ref(false);
+const refreshing = ref(false);
 const noMore = ref(false);
 const errorMsg = ref("");
 
@@ -323,6 +318,12 @@ function switchTab(v: ActivityTab) {
 function refresh() {
   if (loading.value) return;
   initTab();
+}
+
+/** Pull-to-refresh restarts the active tab from page 1. */
+async function onPullRefresh() {
+  if (!loading.value) await initTab();
+  refreshing.value = false;
 }
 
 function openDetail(item: ActivityItem) {

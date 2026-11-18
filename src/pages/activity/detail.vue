@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-2xl mx-auto">
+  <VarPullRefresh v-model="refreshing" class="p-4 sm:p-6 max-w-2xl mx-auto" target="main" @refresh="onPullRefresh">
     <div v-if="loading && !detail" class="flex flex-col items-center justify-center py-16 gap-4">
       <VarLoading type="circle" color="var(--md-primary)" />
       <p class="text-sm text-on-surface-variant">加载中...</p>
@@ -186,7 +186,7 @@
       @changed="fetchDetail" />
     <SignupAuditModal :open="showSignupAudit" :activity-id="id" :activity-name="detail?.activityName || ''"
       @close="showSignupAudit = false" @changed="fetchDetail" />
-  </div>
+  </VarPullRefresh>
 </template>
 
 <script setup lang="ts">
@@ -201,6 +201,7 @@ import {
   ImagePreview,
   Loading as VarLoading,
   Paper as VarPaper,
+  PullRefresh as VarPullRefresh,
   Select as VarSelect,
 } from "@varlet/ui";
 import encodeQR from "qr";
@@ -232,6 +233,7 @@ const id = (route.query.id as string) || "";
 
 const detail = ref<ActivityDetail | null>(null);
 const loading = ref(false);
+const refreshing = ref(false);
 const errorMsg = ref("");
 const imgError = ref(false);
 
@@ -429,6 +431,12 @@ async function fetchDetail() {
 }
 
 onMounted(fetchDetail);
+
+/** Pull-to-refresh reloads the activity detail and its member counters. */
+async function onPullRefresh() {
+  if (!loading.value) await fetchDetail();
+  refreshing.value = false;
+}
 </script>
 
 <style scoped>

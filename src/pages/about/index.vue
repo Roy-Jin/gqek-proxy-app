@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 max-w-3xl mx-auto">
+  <VarPullRefresh v-model="refreshing" class="p-4 max-w-3xl mx-auto" target="main" @refresh="onPullRefresh">
     <div class="mb-4">
       <h2 class="text-[22px] leading-7 font-medium text-on-surface">关于</h2>
       <p class="mt-1 text-sm text-on-surface-variant">{{ env.about.subtitle }}</p>
@@ -92,7 +92,7 @@
         </div>
       </template>
     </VarDialog>
-  </div>
+  </VarPullRefresh>
 </template>
 
 <script setup lang="ts">
@@ -103,6 +103,7 @@ import {
   Cell as VarCell,
   Dialog,
   Paper as VarPaper,
+  PullRefresh as VarPullRefresh,
 } from "@varlet/ui";
 import { listTeam } from "@/api";
 import type { TeamInfo } from "@/api";
@@ -126,6 +127,7 @@ const { hasUpdate } = useAppUpdate();
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);
+const refreshing = ref(false);
 const showDevStatement = ref(false);
 
 // Keep Varlet Cell typography/colors aligned with the app's Material tokens
@@ -194,4 +196,10 @@ onMounted(() => {
   void session.refreshCurrentUser();
   void fetchTeam();
 });
+
+/** Pull-to-refresh updates the profile and team card together. */
+async function onPullRefresh() {
+  await Promise.all([session.refreshCurrentUser(), fetchTeam()]);
+  refreshing.value = false;
+}
 </script>

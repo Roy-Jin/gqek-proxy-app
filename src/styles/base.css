@@ -166,6 +166,19 @@ img {
     box-shadow: var(--md-card-shadow);
 }
 
+/* Pull-to-refresh indicator follows the app surface tokens instead of Varlet's light defaults */
+.var-pull-refresh {
+    --pull-refresh-background: var(--md-surface-container);
+    --pull-refresh-color: var(--md-primary);
+    --pull-refresh-success-color: var(--md-success);
+}
+
+/* Anchor the indicator to the padding edge; without `top` its static position sits
+   below the page padding, leaving a sliver visible above the content */
+.var-pull-refresh__control {
+    top: 0;
+}
+
 /* Card surface for plain containers that are not Varlet Paper/Card. */
 .app-card {
     background-color: var(--md-card-surface);

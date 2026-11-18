@@ -13,33 +13,35 @@
 
       <!-- List -->
       <div class="flex-1 overflow-y-auto">
-        <div v-if="loading && rows.length === 0" class="divide-y divide-outline-variant">
-          <div v-for="i in 5" :key="i" class="animate-pulse space-y-2 p-4">
-            <div class="h-3.5 w-1/4 rounded bg-surface-highest"></div>
-            <div class="h-3 w-3/4 rounded bg-surface-high"></div>
-            <div class="h-3 w-1/2 rounded bg-surface-high"></div>
-          </div>
-        </div>
-
-        <ul v-else-if="filteredRows.length > 0" class="divide-y divide-outline-variant">
-          <li v-for="row in filteredRows" :key="row.businessId" v-ripple
-            class="flex gap-3 px-4 py-3.5 sm:px-5 cursor-pointer"
-            :class="selectedIds.includes(row.businessId) ? 'bg-primary-container' : ''"
-            @click="toggleSelect(row.businessId)">
-            <VarCheckbox :model-value="selectedIds.includes(row.businessId)" class="shrink-0 mt-0.5" @click.stop
-              @change="toggleSelect(row.businessId)" />
-            <div class="flex-1 min-w-0">
-              <div class="flex items-baseline justify-between gap-2">
-                <p class="text-sm font-medium text-on-surface truncate">{{ row.fromUserName }}</p>
-                <span class="shrink-0 text-xs text-on-surface-variant">{{ row.createTime }}</span>
-              </div>
-              <p class="mt-0.5 text-sm text-on-surface truncate">{{ row.messageTitle }}</p>
-              <p class="mt-0.5 text-xs text-on-surface-variant line-clamp-2">{{ row.messageContent }}</p>
+        <VarPullRefresh v-model="refreshing" @refresh="onPullRefresh">
+          <div v-if="loading && rows.length === 0" class="divide-y divide-outline-variant">
+            <div v-for="i in 5" :key="i" class="animate-pulse space-y-2 p-4">
+              <div class="h-3.5 w-1/4 rounded bg-surface-highest"></div>
+              <div class="h-3 w-3/4 rounded bg-surface-high"></div>
+              <div class="h-3 w-1/2 rounded bg-surface-high"></div>
             </div>
-          </li>
-        </ul>
+          </div>
 
-        <AppEmpty v-else-if="!loading" text="暂无可审核的报名" />
+          <ul v-else-if="filteredRows.length > 0" class="divide-y divide-outline-variant">
+            <li v-for="row in filteredRows" :key="row.businessId" v-ripple
+              class="flex gap-3 px-4 py-3.5 sm:px-5 cursor-pointer"
+              :class="selectedIds.includes(row.businessId) ? 'bg-primary-container' : ''"
+              @click="toggleSelect(row.businessId)">
+              <VarCheckbox :model-value="selectedIds.includes(row.businessId)" class="shrink-0 mt-0.5" @click.stop
+                @change="toggleSelect(row.businessId)" />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-baseline justify-between gap-2">
+                  <p class="text-sm font-medium text-on-surface truncate">{{ row.fromUserName }}</p>
+                  <span class="shrink-0 text-xs text-on-surface-variant">{{ row.createTime }}</span>
+                </div>
+                <p class="mt-0.5 text-sm text-on-surface truncate">{{ row.messageTitle }}</p>
+                <p class="mt-0.5 text-xs text-on-surface-variant line-clamp-2">{{ row.messageContent }}</p>
+              </div>
+            </li>
+          </ul>
+
+          <AppEmpty v-else-if="!loading" text="暂无可审核的报名" />
+        </VarPullRefresh>
       </div>
 
       <!-- Footer actions -->
@@ -101,6 +103,7 @@ import {
   Checkbox as VarCheckbox,
   Dialog,
   Popup as VarPopup,
+  PullRefresh as VarPullRefresh,
   Result as VarResult,
   Ripple,
 } from "@varlet/ui";
@@ -122,6 +125,7 @@ const emit = defineEmits<{ close: []; changed: [] }>();
 
 const rows = ref<TodoMessage[]>([]);
 const loading = ref(false);
+const refreshing = ref(false);
 const errorMsg = ref("");
 const approving = ref(false);
 
@@ -177,6 +181,12 @@ async function fetchList() {
   } finally {
     loading.value = false;
   }
+}
+
+/** Pull-to-refresh reloads the pending signup list without closing the popup. */
+async function onPullRefresh() {
+  if (!loading.value) await fetchList();
+  refreshing.value = false;
 }
 
 function askAudit(status: 1 | 2) {

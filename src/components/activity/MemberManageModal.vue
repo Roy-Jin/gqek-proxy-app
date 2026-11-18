@@ -33,29 +33,31 @@
         </div>
 
         <div class="flex-1 overflow-y-auto">
-          <VarSkeleton v-if="loading && members.length === 0" :loading="true" title :rows="6" class="p-4" />
+          <VarPullRefresh v-model="refreshing" @refresh="onPullRefresh">
+            <VarSkeleton v-if="loading && members.length === 0" :loading="true" title :rows="6" class="p-4" />
 
-          <ul v-else-if="filteredMembers.length > 0" class="divide-y divide-outline-variant">
-            <li v-for="m in filteredMembers" :key="m.studentId" class="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-baseline justify-between gap-2">
-                  <p class="truncate text-sm font-medium text-on-surface">{{ m.studentName || '—' }}
-                    <VarChip v-if="isAdmin(m)" type="primary" plain size="small" class="ml-1">管理员</VarChip>
+            <ul v-else-if="filteredMembers.length > 0" class="divide-y divide-outline-variant">
+              <li v-for="m in filteredMembers" :key="m.studentId" class="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <p class="truncate text-sm font-medium text-on-surface">{{ m.studentName || '—' }}
+                      <VarChip v-if="isAdmin(m)" type="primary" plain size="small" class="ml-1">管理员</VarChip>
+                    </p>
+                    <span class="shrink-0 text-xs text-on-surface-variant">{{ m.userName || '' }}</span>
+                  </div>
+                  <p class="mt-0.5 truncate text-xs text-on-surface-variant">
+                    {{ [m.collegeName, m.className].filter(Boolean).join(' · ') || '—' }}
                   </p>
-                  <span class="shrink-0 text-xs text-on-surface-variant">{{ m.userName || '' }}</span>
                 </div>
-                <p class="mt-0.5 truncate text-xs text-on-surface-variant">
-                  {{ [m.collegeName, m.className].filter(Boolean).join(' · ') || '—' }}
-                </p>
-              </div>
-              <VarButton v-if="manageable && !isAdmin(m)" icon-container text round size="small" type="danger"
-                aria-label="移除成员" @click="askRemove(m)">
-                <Trash2 :size="18" />
-              </VarButton>
-            </li>
-          </ul>
+                <VarButton v-if="manageable && !isAdmin(m)" icon-container text round size="small" type="danger"
+                  aria-label="移除成员" @click="askRemove(m)">
+                  <Trash2 :size="18" />
+                </VarButton>
+              </li>
+            </ul>
 
-          <AppEmpty v-else-if="!loading" :text="keyword.trim() ? '没有符合条件的成员' : '暂无成员数据'" />
+            <AppEmpty v-else-if="!loading" :text="keyword.trim() ? '没有符合条件的成员' : '暂无成员数据'" />
+          </VarPullRefresh>
         </div>
       </template>
 
@@ -146,6 +148,7 @@ import {
   Dialog,
   Input as VarInput,
   Popup as VarPopup,
+  PullRefresh as VarPullRefresh,
   Result as VarResult,
   Skeleton as VarSkeleton,
   Ripple,
@@ -185,6 +188,7 @@ const auth = useGlobal();
 const mode = ref<"list" | "add">("list");
 const members = ref<MemberInfo[]>([]);
 const loading = ref(false);
+const refreshing = ref(false);
 const errorMsg = ref("");
 const keyword = ref("");
 
@@ -256,6 +260,12 @@ async function fetchMembers() {
   } finally {
     loading.value = false;
   }
+}
+
+/** Pull-to-refresh reloads the member list without closing the popup. */
+async function onPullRefresh() {
+  if (!loading.value) await fetchMembers();
+  refreshing.value = false;
 }
 
 function startAdd() {

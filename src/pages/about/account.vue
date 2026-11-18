@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 max-w-3xl mx-auto">
+  <VarPullRefresh v-model="refreshing" class="p-4 max-w-3xl mx-auto" target="main" @refresh="onPullRefresh">
     <!-- Current account -->
     <p class="mb-2 px-1 text-sm font-medium text-on-surface-variant">当前账号</p>
     <VarPaper :elevation="0" :radius="16" class="mb-6 p-4">
@@ -90,7 +90,7 @@
     <VarDialog v-model:show="showLogoutConfirm" title="退出登录" message="退出后需要重新登录才能继续使用，确定要退出当前账号吗？" width="86vw"
       :dialog-style="{ maxWidth: '20rem' }" cancel-button-text="取消" confirm-button-text="退出"
       :confirm-button-props="{ type: 'danger' }" close-on-click-overlay @confirm="logout" />
-  </div>
+  </VarPullRefresh>
 </template>
 
 <script setup lang="ts">
@@ -105,6 +105,7 @@ import {
   Dialog,
   Loading as VarLoading,
   Paper as VarPaper,
+  PullRefresh as VarPullRefresh,
   Result as VarResult,
 } from "@varlet/ui";
 import { listTeam, logout as logoutApi } from "@/api";
@@ -139,6 +140,7 @@ const canCreateTempKey = computed(() => auth.loginMethod === "account");
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(true);
+const refreshing = ref(false);
 
 // Keep Varlet Cell typography/colors aligned with the app's Material tokens
 const cellVars = {
@@ -257,4 +259,10 @@ onMounted(() => {
   void session.refreshCurrentUser();
   void fetchTeam();
 });
+
+/** Pull-to-refresh updates the profile and team card together. */
+async function onPullRefresh() {
+  await Promise.all([session.refreshCurrentUser(), fetchTeam()]);
+  refreshing.value = false;
+}
 </script>

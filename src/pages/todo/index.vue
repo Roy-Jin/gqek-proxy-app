@@ -1,14 +1,8 @@
 <template>
-  <div class="p-4 max-w-3xl mx-auto">
-    <div class="flex items-start justify-between gap-3">
-      <div>
-        <h2 class="text-[22px] leading-7 font-medium text-on-surface">待办</h2>
-        <p class="mt-1 text-sm text-on-surface-variant">跟踪需要处理的消息</p>
-      </div>
-      <VarButton text type="primary" size="small" :loading="loading" @click="refresh">
-        <RefreshCw :size="18" class="mr-1" />
-        刷新
-      </VarButton>
+  <VarPullRefresh v-model="refreshing" class="p-4 max-w-3xl mx-auto" target="main" @refresh="onPullRefresh">
+    <div>
+      <h2 class="text-[22px] leading-7 font-medium text-on-surface">待办</h2>
+      <p class="mt-1 text-sm text-on-surface-variant">跟踪需要处理的消息</p>
     </div>
 
     <div class="mt-4">
@@ -118,12 +112,12 @@
         </div>
       </template>
     </VarDialog>
-  </div>
+  </VarPullRefresh>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from "vue";
-import { ChevronDown, CircleCheckBig, CircleX, EllipsisVertical, RefreshCw, Search } from "@lucide/vue";
+import { ChevronDown, CircleCheckBig, CircleX, EllipsisVertical, Search } from "@lucide/vue";
 import {
   BackTop as VarBackTop,
   Button as VarButton,
@@ -133,6 +127,7 @@ import {
   Input as VarInput,
   List as VarList,
   Paper as VarPaper,
+  PullRefresh as VarPullRefresh,
   Result as VarResult,
   Ripple as vRipple,
 } from "@varlet/ui";
@@ -151,6 +146,7 @@ const total = ref(0);
 const rows = ref<TodoMessage[]>([]);
 const loading = ref(false);
 const loadingMore = ref(false);
+const refreshing = ref(false);
 const errorMsg = ref("");
 const approving = ref(false);
 const auditStatus = ref<1 | 2>(1);
@@ -178,12 +174,6 @@ const tabs: { label: string; value: number }[] = [
 
 const activeTab = ref<number>(0);
 
-/** Min gap between refresh taps; only absorbs repeat clicks. */
-const REFRESH_GAP_MS = 400;
-
-let lastRequestAt = 0;
-let gapTimer: ReturnType<typeof setTimeout> | null = null;
-
 /** Local fallback matches every field shown in the list, since the API only searches titles. */
 function matchesKeyword(row: TodoMessage, needle: string): boolean {
   return [row.fromUserName, row.messageTitle, row.messageContent].some((field) =>
@@ -194,7 +184,6 @@ function matchesKeyword(row: TodoMessage, needle: string): boolean {
 /** Load one batch; `reset` drops existing rows and restarts from page 1. */
 async function fetchBatch(reset: boolean) {
   const seq = ++requestSeq;
-  lastRequestAt = Date.now();
   errorMsg.value = "";
   const needle = keyword.value.trim();
   if (reset) {
@@ -282,18 +271,10 @@ function switchTab(status: number) {
   fetchBatch(true);
 }
 
-function refresh() {
-  if (loading.value || loadingMore.value) return;
-  const wait = Math.max(0, REFRESH_GAP_MS - (Date.now() - lastRequestAt));
-  if (wait === 0) {
-    fetchBatch(true);
-    return;
-  }
-  if (gapTimer) return;
-  gapTimer = setTimeout(() => {
-    gapTimer = null;
-    fetchBatch(true);
-  }, wait);
+/** Pull-to-refresh restarts the list from page 1. */
+async function onPullRefresh() {
+  if (!loading.value) await fetchBatch(true);
+  refreshing.value = false;
 }
 
 function confirmAudit() {
@@ -352,8 +333,6 @@ async function runAudit(status: 1 | 2) {
 onMounted(() => fetchBatch(true));
 
 onUnmounted(() => {
-  if (gapTimer) clearTimeout(gapTimer);
-  gapTimer = null;
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = null;
 });

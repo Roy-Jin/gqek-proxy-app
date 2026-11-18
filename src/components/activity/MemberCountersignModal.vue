@@ -26,26 +26,28 @@
 
       <!-- Member list -->
       <div class="flex-1 overflow-y-auto">
-        <VarSkeleton v-if="loading && members.length === 0" :loading="true" title :rows="6" class="p-4" />
+        <VarPullRefresh v-model="refreshing" @refresh="onPullRefresh">
+          <VarSkeleton v-if="loading && members.length === 0" :loading="true" title :rows="6" class="p-4" />
 
-        <ul v-else-if="displayMembers.length > 0" class="divide-y divide-outline-variant">
-          <li v-for="m in displayMembers" :key="m.studentId" v-ripple
-            class="relative flex cursor-pointer gap-3 overflow-hidden px-4 py-3.5 sm:px-5"
-            :class="selectedIds.includes(m.studentId) ? 'bg-primary-container' : ''" @click="toggleSelect(m.studentId)">
-            <VarCheckbox :model-value="selectedIds.includes(m.studentId)" class="mt-0.5 shrink-0" @click.stop
-              @change="toggleSelect(m.studentId)" />
-            <div class="min-w-0 flex-1">
-              <div class="flex items-baseline justify-between gap-2">
-                <p class="truncate text-sm font-medium text-on-surface">{{ m.studentName || '—' }}</p>
-                <span class="shrink-0 text-xs text-on-surface-variant">{{ m.userName || '' }}</span>
+          <ul v-else-if="displayMembers.length > 0" class="divide-y divide-outline-variant">
+            <li v-for="m in displayMembers" :key="m.studentId" v-ripple
+              class="relative flex cursor-pointer gap-3 overflow-hidden px-4 py-3.5 sm:px-5"
+              :class="selectedIds.includes(m.studentId) ? 'bg-primary-container' : ''" @click="toggleSelect(m.studentId)">
+              <VarCheckbox :model-value="selectedIds.includes(m.studentId)" class="mt-0.5 shrink-0" @click.stop
+                @change="toggleSelect(m.studentId)" />
+              <div class="min-w-0 flex-1">
+                <div class="flex items-baseline justify-between gap-2">
+                  <p class="truncate text-sm font-medium text-on-surface">{{ m.studentName || '—' }}</p>
+                  <span class="shrink-0 text-xs text-on-surface-variant">{{ m.userName || '' }}</span>
+                </div>
+                <p class="mt-0.5 truncate text-xs text-on-surface-variant">{{ m.collegeName }} · {{ m.className }}</p>
+                <p class="mt-0.5 text-xs text-on-surface-variant">签到 {{ m.signNum }} 次 · 签退 {{ m.signOutNum }} 次</p>
               </div>
-              <p class="mt-0.5 truncate text-xs text-on-surface-variant">{{ m.collegeName }} · {{ m.className }}</p>
-              <p class="mt-0.5 text-xs text-on-surface-variant">签到 {{ m.signNum }} 次 · 签退 {{ m.signOutNum }} 次</p>
-            </div>
-          </li>
-        </ul>
+            </li>
+          </ul>
 
-        <AppEmpty v-else-if="!loading" :text="filterMode || keyword.trim() ? '没有符合条件的成员' : '暂无成员数据'" />
+          <AppEmpty v-else-if="!loading" :text="filterMode || keyword.trim() ? '没有符合条件的成员' : '暂无成员数据'" />
+        </VarPullRefresh>
       </div>
 
       <p v-if="errorMsg" class="border-t border-outline-variant px-4 py-2 text-sm text-error sm:px-5">
@@ -90,6 +92,7 @@ import {
   Dialog,
   Input as VarInput,
   Popup as VarPopup,
+  PullRefresh as VarPullRefresh,
   Result as VarResult,
   Select as VarSelect,
   Skeleton as VarSkeleton,
@@ -111,6 +114,7 @@ const emit = defineEmits<{ close: [] }>();
 
 const members = ref<MemberInfo[]>([]);
 const loading = ref(false);
+const refreshing = ref(false);
 const errorMsg = ref("");
 const keyword = ref("");
 const filterMode = ref("");
@@ -186,6 +190,12 @@ async function fetchList() {
   } finally {
     if (seq === requestSeq) loading.value = false;
   }
+}
+
+/** Pull-to-refresh reloads the member list without closing the popup. */
+async function onPullRefresh() {
+  if (!loading.value) await fetchList();
+  refreshing.value = false;
 }
 
 async function doCountersign(signType: string) {

@@ -69,6 +69,7 @@
         :key="item.name"
         :name="item.name"
         :label="item.label"
+        @click="onNavItemClick(item.name)"
       >
         <template #icon>
           <component :is="item.icon" :size="22" />
@@ -148,6 +149,12 @@ const navActive = computed(
 function onNavChange(name: string | number) {
   const item = navItems.find((entry) => entry.name === name);
   if (item) router.replace(item.path);
+}
+
+/** Tapping the already active tab scrolls the page back to top. */
+function onNavItemClick(name: string | number) {
+  if (name !== navActive.value) return;
+  document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 /** Validate saved token on boot; fall back to login when invalid */
