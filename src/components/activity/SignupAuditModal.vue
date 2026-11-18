@@ -145,22 +145,33 @@ function onUpdateShow(value: boolean) {
   if (!value) emit("close");
 }
 
+/** Page size per request; server may cap it lower, so keep paging until `total` is reached */
+const PAGE_SIZE = 50;
+
 async function fetchList() {
   if (!props.activityName) return;
   loading.value = true;
   errorMsg.value = "";
   try {
-    const body = (
-      await listTodoApp({
-        pageSize: 50,
-        pageNum: 1,
-        platform: 1,
-        messageStatus: 0,
-        messageTitle: "活动单人报名",
-      })
-    ).data;
-    if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
-    rows.value = body.rows;
+    // Fetch every page: a single request misses records once the backlog exceeds one page
+    const collected: TodoMessage[] = [];
+    for (let pageNum = 1; ; pageNum++) {
+      const body = (
+        await listTodoApp({
+          pageSize: PAGE_SIZE,
+          pageNum,
+          platform: 1,
+          messageStatus: 0,
+          messageTitle: "活动单人报名",
+        })
+      ).data;
+      if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
+      const batch = body.rows ?? [];
+      collected.push(...batch);
+      // An empty page is the only reliable end marker when `total` is unavailable
+      if (batch.length === 0 || (body.total > 0 && collected.length >= body.total)) break;
+    }
+    rows.value = collected;
   } catch (e) {
     errorMsg.value = errorMessage(e);
   } finally {
