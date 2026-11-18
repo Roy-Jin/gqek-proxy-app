@@ -115,6 +115,7 @@ import { useEnvStore } from "@/stores/env";
 import { useGlobal } from "@/stores/global";
 import { ChevronRight, FileText, IdCard, Info, Settings } from "@lucide/vue";
 import { useToast } from "@/composables/useToast";
+import { useScrollRestore } from "@/composables/useScrollRestore";
 
 // `Dialog` is Varlet's imperative API; the render component lives on `.Component`
 const VarDialog = Dialog.Component;
@@ -125,6 +126,9 @@ const router = useRouter();
 const toast = useToast();
 const session = useAccountSession();
 const { hasUpdate } = useAppUpdate();
+
+// The page is cached; restore its scroll offset after returning from a subpage
+useScrollRestore();
 
 const team = ref<TeamInfo | null>(null);
 const teamLoading = ref(false);

@@ -91,8 +91,7 @@
       </template>
     </VarList>
 
-    <!-- Scroll target is the app shell's <main>, not the window -->
-    <VarBackTop target="main" :visibility-height="320" :right="16" :bottom="84" />
+    <AppBackTop />
   </VarPullRefresh>
 </template>
 
@@ -102,7 +101,6 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { CalendarDays, CircleUser, Clock, Image } from "@lucide/vue";
 import {
-  BackTop as VarBackTop,
   Button as VarButton,
   Chip as VarChip,
   List as VarList,
@@ -112,7 +110,9 @@ import {
 import { listMyActivityByStudent, listMyVolunteerActivityByStudent, activityStatusLabel, activityStatusChipType } from "@/api";
 import type { ActivityInfo, VolunteerActivityInfo } from "@/api";
 import { useGlobal } from "@/stores/global";
+import { useScrollRestore } from "@/composables/useScrollRestore";
 import { errorMessage } from "@/utils/error";
+import AppBackTop from "@/components/ui/AppBackTop.vue";
 import AppSegmented from "@/components/ui/AppSegmented.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
 import AppErrorState from "@/components/ui/AppErrorState.vue";
@@ -141,6 +141,9 @@ const MIN_BATCH_ITEMS = 3;
 const auth = useGlobal();
 const router = useRouter();
 const route = useRoute();
+
+// The page is cached; restore its scroll offset after returning from a detail page
+useScrollRestore();
 
 const tabs = [
   { label: "志愿", value: "volunteer" },

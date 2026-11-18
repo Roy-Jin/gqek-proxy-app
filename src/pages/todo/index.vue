@@ -75,7 +75,8 @@
     </VarPaper>
 
     <!-- Batch approval speed dial, only shown once something is selected -->
-    <VarFab v-if="selectedIds.length > 0" v-model:active="fabActive" class="fab-inverse" :bottom="84" :right="16">
+    <VarFab v-if="selectedIds.length > 0 && pageActive" v-model:active="fabActive" class="fab-inverse" :bottom="84"
+      :right="16">
       <template #trigger="{ active }">
         <VarButton var-fab-cover class="var-fab__trigger" icon-container>
           <component :is="active ? ChevronDown : EllipsisVertical" :size="active ? 20 : 24" />
@@ -89,9 +90,7 @@
       </VarButton>
     </VarFab>
 
-    <!-- Scroll target is the app shell's <main>, not the window -->
-    <VarBackTop v-if="!fabActive" target="main" :visibility-height="320" :right="16"
-      :bottom="selectedIds.length > 0 ? 152 : 84" />
+    <AppBackTop v-if="!fabActive" :bottom="selectedIds.length > 0 ? 152 : 84" />
 
     <!-- Shared confirm dialog; auditStatus 1 = approve, 2 = reject -->
     <VarDialog v-model:show="showConfirm" :title="auditStatus === 1 ? '通过确认' : '驳回确认'" message-align="center"
@@ -127,7 +126,6 @@ defineOptions({ name: "TodoIndex" });
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { ChevronDown, CircleCheckBig, CircleX, EllipsisVertical, Search } from "@lucide/vue";
 import {
-  BackTop as VarBackTop,
   Button as VarButton,
   Checkbox as VarCheckbox,
   Dialog,
@@ -142,7 +140,10 @@ import {
 import { listTodoApp, auditInfo } from "@/api";
 import type { TodoMessage } from "@/api";
 import { useMultiSelect } from "@/composables/useMultiSelect";
+import { usePageActive } from "@/composables/usePageActive";
+import { useScrollRestore } from "@/composables/useScrollRestore";
 import { errorMessage } from "@/utils/error";
+import AppBackTop from "@/components/ui/AppBackTop.vue";
 import AppEmpty from "@/components/ui/AppEmpty.vue";
 import AppErrorState from "@/components/ui/AppErrorState.vue";
 import AppSegmented from "@/components/ui/AppSegmented.vue";
@@ -164,6 +165,10 @@ const showFeedback = ref(false);
 const feedback = ref<{ type: "success" | "error"; title: string; description: string } | null>(null);
 const fabActive = ref(false);
 const keyword = ref("");
+// Varlet Fab is teleported to <body>; hide it while this cached page is inactive
+const pageActive = usePageActive();
+// The page is cached; keep its scroll offset across tab switches and subpages
+useScrollRestore();
 
 const noMore = ref(false);
 
