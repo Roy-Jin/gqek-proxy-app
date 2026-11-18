@@ -48,8 +48,10 @@
       style="padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right)"
     >
       <RouterView v-slot="{ Component }">
-        <Transition :name="isSubpage ? 'subpage' : 'page'" mode="out-in">
-          <component :is="Component" />
+        <Transition :name="transitionName" mode="out-in">
+          <KeepAlive :include="CACHED_PAGE_NAMES">
+            <component :is="Component" />
+          </KeepAlive>
         </Transition>
       </RouterView>
     </main>
@@ -80,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import {
@@ -110,9 +112,28 @@ const { checkForUpdate } = useAppUpdate();
 const { isAuthed, authChecked } = storeToRefs(auth);
 const route = useRoute();
 
+/** Component names cached by KeepAlive — only bottom-nav tab pages. Subpages (detail/settings/etc.) always reload. */
+const CACHED_PAGE_NAMES = ["ActivityIndex", "TodoIndex", "AboutIndex"];
+
 const router = useRouter();
 
-const isSubpage = computed(() => route.path.split("/").filter(Boolean).length > 1);
+const pathDepth = (p: string) => p.split("/").filter(Boolean).length;
+
+const transitionName = ref("page");
+
+router.beforeEach((to, from) => {
+  const toDepth = pathDepth(to.path);
+  const fromDepth = pathDepth(from.path);
+  if (toDepth === fromDepth) {
+    transitionName.value = "page";
+  } else if (toDepth > fromDepth) {
+    transitionName.value = "subpage-forward";
+  } else {
+    transitionName.value = "subpage-back";
+  }
+});
+
+const isSubpage = computed(() => pathDepth(route.path) > 1);
 
 const headerTitle = computed(() => {
   if (!isSubpage.value) return env.app.name;
@@ -214,28 +235,53 @@ onMounted(() => {
   --bottom-navigation-item-inactive-color: var(--md-on-surface-variant);
 }
 
+/* Page-level tab switch: subtle scale + fade */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity var(--md-motion-base) var(--md-ease-standard);
+  transition:
+    opacity var(--md-motion-base) var(--md-ease-standard),
+    transform var(--md-motion-base) var(--md-ease-standard);
 }
-.page-enter-from,
+.page-enter-from {
+  opacity: 0;
+  transform: scale(0.985);
+}
 .page-leave-to {
+  opacity: 0;
+  transform: scale(1.015);
+}
+
+/* Push: enter subpage — slide in from right */
+.subpage-forward-enter-active {
+  transition:
+    opacity var(--md-motion-slow) var(--md-ease-emphasized-decelerate),
+    transform var(--md-motion-slow) var(--md-ease-emphasized-decelerate);
+}
+.subpage-forward-leave-active {
+  transition: opacity var(--md-motion-fast) var(--md-ease-standard);
+}
+.subpage-forward-enter-from {
+  opacity: 0;
+  transform: translateX(32px);
+}
+.subpage-forward-leave-to {
   opacity: 0;
 }
 
-.subpage-enter-active {
+/* Pop: return from subpage — current page slides right out */
+.subpage-back-enter-active {
+  transition: opacity var(--md-motion-base) var(--md-ease-standard);
+}
+.subpage-back-leave-active {
   transition:
-    opacity var(--md-motion-slow) var(--md-ease-standard),
-    transform var(--md-motion-slow) var(--md-ease-standard);
+    opacity var(--md-motion-slow) var(--md-ease-emphasized-accelerate),
+    transform var(--md-motion-slow) var(--md-ease-emphasized-accelerate);
 }
-.subpage-leave-active {
-  transition: opacity var(--md-motion-fast) var(--md-ease-standard);
-}
-.subpage-enter-from {
+.subpage-back-enter-from {
   opacity: 0;
-  transform: translateY(12px);
 }
-.subpage-leave-to {
+.subpage-back-leave-to {
   opacity: 0;
+  transform: translateX(32px);
 }
 </style>

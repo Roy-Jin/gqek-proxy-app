@@ -123,6 +123,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: "TodoIndex" });
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { ChevronDown, CircleCheckBig, CircleX, EllipsisVertical, Search } from "@lucide/vue";
 import {

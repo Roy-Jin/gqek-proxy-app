@@ -97,6 +97,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: "ActivityIndex" });
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { CalendarDays, CircleUser, Clock, Image } from "@lucide/vue";
