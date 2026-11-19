@@ -186,7 +186,7 @@
     <SignupAuditModal :open="showSignupAudit" :activity-id="id" :activity-name="detail?.activityName || ''"
       @close="showSignupAudit = false" @changed="fetchDetail" />
 
-    <VarImagePreview v-model:show="qrPreview.show" :images="qrPreview.images" :zoom="0.8" teleport="body" closeable>
+    <VarImagePreview v-model:show="qrPreview.show" :images="qrPreview.images" :zoom="0.8" teleport="body">
       <template #extra>
         <VarLoading v-if="qrPreviewLoading" class="qr-preview-loading" type="circle" color="#fff" size="large" />
         <p v-if="qrPreview.title" class="qr-preview-title">{{ qrPreview.title }}</p>

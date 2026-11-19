@@ -30,7 +30,7 @@
       <VarCell v-for="(link, index) in links" :key="link.label" :title="link.label" :description="link.description"
         ripple :border="index < links.length - 1" :border-offset="16" @click="openExternal(link.url)">
         <template #icon>
-          <span class="grid h-9 w-9 place-items-center rounded-full bg-surface-high text-on-surface-variant">
+          <span class="grid h-9 w-9 place-items-center rounded-full bg-surface-high text-on-surface-variant mr-2">
             <component :is="link.icon" :size="20" />
           </span>
         </template>
