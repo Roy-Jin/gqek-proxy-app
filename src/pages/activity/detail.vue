@@ -100,8 +100,7 @@
               </span>
             </template>
             <template #extra>
-              <VarLoading v-if="qrLoading" type="circle" size="mini" />
-              <ChevronRight v-else :size="20" class="text-on-surface-variant" />
+              <ChevronRight :size="20" class="text-on-surface-variant" />
             </template>
           </VarCell>
           <VarCell title="成员补签" description="为未签到、未签退的成员补签" ripple @click="showMembers = true">
@@ -186,6 +185,14 @@
       @changed="fetchDetail" />
     <SignupAuditModal :open="showSignupAudit" :activity-id="id" :activity-name="detail?.activityName || ''"
       @close="showSignupAudit = false" @changed="fetchDetail" />
+
+    <VarImagePreview v-model:show="qrPreview.show" :images="qrPreview.images" :zoom="0.8" teleport="body" closeable>
+      <template #extra>
+        <VarLoading v-if="qrPreviewLoading" class="qr-preview-loading" type="circle" color="#fff" size="large" />
+        <p v-if="qrPreview.title" class="qr-preview-title">{{ qrPreview.title }}</p>
+        <p class="qr-preview-action">{{ qrPreview.action }}</p>
+      </template>
+    </VarImagePreview>
   </VarPullRefresh>
 </template>
 
@@ -225,6 +232,8 @@ interface InfoItem {
 
 const route = useRoute();
 const toast = useToast();
+
+const VarImagePreview = ImagePreview.Component;
 
 const type = (route.query.type as string) || "volunteer";
 const id = (route.query.id as string) || "";
@@ -282,6 +291,50 @@ function onImgError() {
 
 const signing = ref(false);
 const qrLoading = ref(false);
+
+// Shared QR image preview: activity name above the QR, action below it
+const qrPreview = ref<{ show: boolean; images: string[]; title: string; action: string }>({
+  show: false,
+  images: [],
+  title: "",
+  action: "",
+});
+const qrPreviewLoading = ref(false);
+let qrPreviewToken = 0;
+
+function preloadImage(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const probe = new window.Image();
+    probe.onload = () => resolve();
+    probe.onerror = () => reject(new Error("二维码图片加载失败"));
+    probe.src = src;
+  });
+}
+
+// Open the preview at once and resolve the image inside it, so there is a single loading state
+async function openQrPreview(action: string, resolveImage: () => string | Promise<string>) {
+  const token = ++qrPreviewToken;
+  qrPreview.value = {
+    show: true,
+    images: [],
+    title: detail.value?.activityName || "",
+    action,
+  };
+  qrPreviewLoading.value = true;
+  try {
+    const image = await resolveImage();
+    await preloadImage(image);
+    if (token !== qrPreviewToken) return;
+    qrPreview.value.images = [image];
+    qrPreviewLoading.value = false;
+  } catch (e) {
+    if (token !== qrPreviewToken) return;
+    qrPreview.value.show = false;
+    qrPreviewLoading.value = false;
+    toast.error(errorMessage(e));
+  }
+}
+
 // QR preview is only useful while at least one of sign-in / sign-out is enabled
 const qrDisabled = computed(() => {
   const d = detail.value;
@@ -361,13 +414,14 @@ async function openSignQr() {
   if (qrDisabled.value) return toast.error("请先开启签到或签退功能");
   qrLoading.value = true;
   try {
-    const body = (await getSignQrCode(id)).data;
-    if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
-    const url = body.data?.qrMap?.url;
-    if (!url) throw new Error("暂未获取到二维码");
-    ImagePreview({ images: [url], zoom: 0.8 });
-  } catch (e) {
-    toast.error(errorMessage(e));
+    const action = signMode.value === "sign-out" ? "签退" : "签到";
+    await openQrPreview(action, async () => {
+      const body = (await getSignQrCode(id)).data;
+      if (body.code !== 200) throw new Error(body.msg || `请求失败（${body.code}）`);
+      const url = body.data?.qrMap?.url;
+      if (!url) throw new Error("暂未获取到二维码");
+      return url;
+    });
   } finally {
     qrLoading.value = false;
   }
@@ -378,7 +432,7 @@ const ACTIVITY_QR_URL = "/pages/home/recommendation/eventDetails";
 
 function openActivityQr() {
   const text = JSON.stringify({ businessId: id, type: 1, content: null, url: ACTIVITY_QR_URL });
-  ImagePreview({ images: [encodeQR(text, "data-url", { scale: 8, border: 2 })], zoom: 0.8 });
+  void openQrPreview("报名", () => encodeQR(text, "data-url", { scale: 8, border: 2 }));
 }
 
 const teachers = computed(() =>
@@ -477,5 +531,46 @@ async function onPullRefresh() {
   height: 14px;
   border-radius: 9999px;
   background: var(--md-primary);
+}
+
+/* Spinner centered where the QR image is rendered while it loads */
+.qr-preview-loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Preview captions: activity name above the QR, action below it */
+.qr-preview-title,
+.qr-preview-action {
+  color: #fff;
+  position: fixed;
+  left: 50%;
+  padding: 6px 16px;
+  border-radius: 10px;
+  text-align: center;
+  word-break: break-word;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.qr-preview-title {
+  bottom: min(calc(50% + min(50vw, 50vh) + 14px), calc(100% - 24px));
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.4;
+  width: 96vw;
+}
+
+.qr-preview-action {
+  top: min(calc(50% + min(50vw, 50vh) + 14px), calc(100% - 48px));
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.5;
+  background: #fff;
+  color: #000;
 }
 </style>
